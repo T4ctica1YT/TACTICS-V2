@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Codename T4CTIC - Local Player</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #101010;
+    }
+
+    #game-frame {
+      border: none;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    id="game-frame"
+    frameborder="0"
+    allowfullscreen
+  ></iframe>
+
+  <script>
+    (function () {
+      const GAME_URL = "https://cdn.jsdelivr.net/gh/T4ctica1YT/Codename-T4CTIC@latest/Play/Play.html";
+      const frame = document.getElementById("game-frame");
+
+      fetch(GAME_URL, { cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.text();
+        })
+        .then((html) => {
+          frame.srcdoc = html;
+        })
+        .catch(() => {
+          // Fallback: load directly if srcdoc approach fails
+          frame.src = GAME_URL;
+        });
+    })();
+  </script>
+  
+  // same html from my website just here for cloudflare and custom domains
+
+</body>
+</html>
