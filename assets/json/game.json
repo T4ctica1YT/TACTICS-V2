@@ -2159,7 +2159,7 @@
     cover: 'JSAB.png',
     description: "Just Shapes & Beats is a music-based bullet hell video game developed and published by Canadian indie studio Berzerk Studio.",
     features: "Rhythm, Bullet Hell, Story"
-  }
+  },
   'Silksong.html': {
     title: 'Hollow Knight Silksong',
     year: '2025',
@@ -2168,7 +2168,7 @@
     cover: 'Silksong.jpg',
     description: "Metroidvania action-adventure game developed and published by Team Cherry, serving as the sequel to Hollow Knight",
     features: "Metroidvania, Combat, Exploration"
-  }
+  },
   'TABS.html': {
     title: 'Totally Acurate Battle Simulator (TABS)',
     year: '2021',
@@ -2177,7 +2177,7 @@
     cover: 'TABS.png',
     description: "TABS is a physics-based strategy game developed by Landfall Games.",
     features: "Physics, Strategy, Sandbox"
-  }
+  },
   '-3.html': {
     title: '-3',
     year: '2026',
@@ -2186,7 +2186,7 @@
     cover: '-3.png',
     description: "-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3-3",
     features: "-3"
-  }
+  },
   '-b.html': {
     title: '-b',
     year: '2026',
@@ -2195,7 +2195,7 @@
     cover: '-b.png',
     description: "-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b-b",
     features: "-b"
-  }
+  },
   'hl2.html': {
     title: 'Half-life 2',
     year: '2004',
