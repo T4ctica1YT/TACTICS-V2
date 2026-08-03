@@ -59,7 +59,7 @@
     system: 'PC',
     genre: 'Run and Gun, Action',
     cover: 'cuphead_cover.png',
-    warning: "May take a long time to load, or not load at all."
+    warning: "May take a long time to load, or not load at all.",
     description: "A classic run and gun action game heavily focused on boss battles, inspired by cartoons of the 1930s. May take really long load times, or just may not load at all.",
     features: "Boss rush, 1930s cartoon art style, Co-op."
   },
