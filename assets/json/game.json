@@ -423,7 +423,7 @@
     description: "A 3D endless runner game set in space. Run along walls and defy gravity to navigate complex, evolving tunnels.",
     features: "3D graphics, Endless runner, Gravity mechanics."
   },
-  'Papa\'s Bakeria.html': {
+  'Papas Bakeria.html': {
     title: "Papa's Bakeria",
     year: '2016',
     system: 'PC',
@@ -432,7 +432,7 @@
     description: "Work as a baker, taking orders, preparing pie crusts, baking, and adding toppings to create custom pies for customers.",
     features: "Flash (Ruffle), Time management, Cooking sim."
   },
-  'Papa\'s Cheeseria.html': {
+  'Papas Cheeseria.html': {
     title: "Papa's Cheeseria",
     year: '2015',
     system: 'PC',
@@ -450,7 +450,7 @@
     description: "A classic endless runner game set in the Miami subways. Escape the grumpy inspector and his dog.",
     features: "Endless runner, Collect coins, Power-ups."
   },
-  'Five Nights at Freddy\'s.html': {
+  'FNAF1.html': {
     title: "Five Nights at Freddy's 1",
     year: '2014',
     system: 'PC',
@@ -459,7 +459,7 @@
     description: "The original survival horror game where you must survive five nights at Freddy Fazbear's Pizza, constantly watchful of the animatronics.",
     features: "Survival Horror, Camera monitoring, Resource management."
   },
-  'Five Nights at Freddy\'s 2.html': {
+  'FNAF2.html': {
     title: "Five Nights at Freddy's 2",
     year: '2014',
     system: 'PC',
@@ -468,7 +468,7 @@
     description: "A prequel to the first game, featuring new and old animatronics, and no doors. Use the Freddy head mask to fool them.",
     features: "Survival Horror, Mask mechanic, Camera monitoring."
   },
-  'Five Nights at Freddy\'s 3.html': {
+  'FNAF3.html': {
     title: "Five Nights at Freddy's 3",
     year: '2015',
     system: 'PC',
@@ -477,7 +477,7 @@
     description: "Set thirty years after the closure of Freddy Fazbear's Pizza, you must survive a single terrifying animatronic, Springtrap, at Fazbear's Fright: The Horror Attraction.",
     features: "Survival Horror, Single antagonist, Audio lures."
   },
-  'Five Nights at Freddy\'s 4.html': {
+  'FNAF4.html': {
     title: "Five Nights at Freddy's 4",
     year: '2015',
     system: 'PC',
@@ -486,7 +486,7 @@
     description: "The final chapter of the original story, where you must defend yourself from Nightmare animatronics from your own home.",
     features: "Survival Horror, Sound-based gameplay, Nightmare enemies."
   },
-  'Five Nights at Freddy\'s_ Sister Location.html': {
+  'FNAFSis.html': {
     title: 'FNAF: Sister Location',
     year: '2016',
     system: 'PC',
@@ -495,7 +495,7 @@
     description: "Work as a late-night technician at Circus Baby's Pizza World, navigating through dark ventilation shafts and surviving new animatronics.",
     features: "Survival Horror, Story-driven, New mechanics."
   },
-  'Five Nights at Freddy\'s_ Pizza Simulator.html': {
+  'FNAFPIZZA.html': {
     title: 'FNAF: Pizzeria Simulator (FNAF 6)',
     year: '2017',
     system: 'PC',
@@ -504,7 +504,7 @@
     description: "A mix of management simulation and survival horror. Build your pizzeria by day and survive hostile animatronics by night.",
     features: "Management sim, Survival Horror, Story conclusion."
   },
-  'Five Nights at Freddy\'s_ Ultimate Custom Night.html': {
+  'FNAFULT.html': {
     title: 'Ultimate Custom Night (UCN)',
     year: '2018',
     system: 'PC',
@@ -1575,7 +1575,7 @@
     description: "A brutal physics-based obstacle course game featuring ragdoll carnage and user-created levels.",
     features: "HTML5 port, Physics-based, User-created levels."
   },
-  'Papa\'s Pizeria.html': {
+  'Papas Pizeria.html': {
     title: "Papa's Pizzeria",
     year: '2010',
     system: 'PC',
@@ -1584,7 +1584,7 @@
     description: "Run a pizza restaurant, prepare orders and keep the customers happy.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Freezeria.html': {
+  'Papas Freezeria.html': {
     title: "Papa's Freezeria",
     year: '2011',
     system: 'PC',
@@ -1593,7 +1593,7 @@
     description: "Manage an ice cream shop on the boardwalk and serve customers tasty concoctions.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Donuteria.html': {
+  'Papas Donuteria.html': {
     title: "Papa's Donuteria",
     year: '2012',
     system: 'PC',
@@ -1602,7 +1602,7 @@
     description: "Make creative donuts and manage orders in a busy donut shop.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Burgeria.html': {
+  'Papas Burgeria.html': {
     title: "Papa's Burgeria",
     year: '2012',
     system: 'PC',
@@ -1611,7 +1611,7 @@
     description: "Cook burgers to order and build up your burger franchise.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Scooperia.html': {
+  'Papas Scooperia.html': {
     title: "Papa's Scooperia",
     year: '2013',
     system: 'PC',
@@ -1620,7 +1620,7 @@
     description: "Serve ice cream creations quickly to impatient customers on a busy street.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Cupcakeria.html': {
+  'Papas Cupcakeria.html': {
     title: "Papa's Cupcakeria",
     year: '2013',
     system: 'PC',
@@ -1629,7 +1629,7 @@
     description: "Bake and decorate cupcakes to satisfy customer orders on time.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Wingeria.html': {
+  'Papas Wingeria.html': {
     title: "Papa's Wingeria",
     year: '2014',
     system: 'PC',
@@ -1638,7 +1638,7 @@
     description: "Run a wing stand and manage sauces, sides, and speedy customers.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Hot Doggeria.html': {
+  'Papas Hot Doggeria.html': {
     title: "Papa's Hot Doggeria",
     year: '2014',
     system: 'PC',
@@ -1647,7 +1647,7 @@
     description: "Serve hot dogs in a stadium-style environment and satisfy the crowd.",
     features: "Flash (Ruffle), Management."
   },
-  'Papa\'s Sushiria.html': {
+  'Papas Sushiria.html': {
     title: "Papa's Sushiria",
     year: '2015',
     system: 'PC',
