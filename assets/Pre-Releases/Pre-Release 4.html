@@ -1,0 +1,3121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>TACTICS - V2 (Pre-Release 4)</title>
+<style>
+:root{
+  --bg-top: #07101a;
+  --bg-bottom: #0c1722;
+  --bg-gradient: linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+  --card-top: rgba(255,255,255,0.02);
+  --card-bottom: rgba(255,255,255,0.01);
+  --card-gradient: linear-gradient(180deg,var(--card-top),var(--card-bottom));
+  --modal-top: #07121a;
+  --modal-bottom: #051018;
+  --modal-gradient: linear-gradient(180deg,var(--modal-top),var(--modal-bottom));
+  --topbar-top: rgba(7,16,26,0.36);
+  --topbar-bottom: rgba(12,23,34,0.28);
+  --topbar-gradient: linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom));
+  --footer-top: rgba(7,16,26,0.30);
+  --footer-bottom: rgba(12,23,34,0.22);
+  --footer-gradient: linear-gradient(180deg,var(--footer-top),var(--footer-bottom));
+  --iframe-topbar-top: rgba(0,0,0,0.18);
+  --iframe-topbar-bottom: rgba(0,0,0,0.10);
+  --iframe-topbar-gradient: linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom));
+  --glass: rgba(255,255,255,0.03);
+  --accent: #06b6d4;
+  --accent-2: #00aeb0;
+  --muted: #98a0ad;
+  --text: #e6eef6;
+  --logo-text: #021018;
+  --radius:14px; --gap:14px; --pad:14px;
+  --card-base-w: 384px;
+  --card-base-h: 576px;
+  --thumb-base-h: 448px;
+  --card-scale: 1;
+  --movie-card-scale: 1;
+  color-scheme: dark;
+}
+
+@font-face{
+  font-family: "GameTitleFont";
+  src: url("https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/fonts/Title%20-%20Font%20-%20Thick%20%20Smooth%20Pixel.ttf") format("truetype");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face{
+  font-family: "NetflixSans";
+  src: url("https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/NetflixSans_W_Blk.ttf") format("truetype");
+  font-weight: 700 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+.grid, .grid * {
+  font-family: "GameTitleFont", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Tab system */
+.tab-bar{
+  display:flex;
+  gap:4px;
+  align-items:center;
+  background:rgba(255,255,255,0.03);
+  border-radius:10px;
+  padding:3px;
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+}
+.tab-btn-main{
+  background:transparent;
+  border:0;
+  color:var(--muted);
+  padding:7px 16px;
+  border-radius:8px;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:background 180ms ease, color 180ms ease;
+}
+.tab-btn-main.active{
+  background:rgba(255,255,255,0.07);
+  color:var(--text);
+}
+
+/* Settings panels */
+.settings-panel{
+  position:absolute;
+  right:6px;
+  top:54px;
+  width:220px;
+  background: var(--modal-gradient);
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 10px 30px rgba(2,6,12,0.6);
+  z-index:90;
+  gap:8px;
+  display:flex;
+  flex-direction:column;
+  opacity:0;
+  transform:translateY(-8px) scale(0.98);
+  pointer-events:none;
+  transition: opacity 220ms cubic-bezier(.2,.9,.28,1), transform 240ms cubic-bezier(.2,.9,.28,1);
+  will-change: opacity, transform;
+}
+.settings-panel[aria-hidden="false"]{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.settings-section{display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:8px}
+.settings-label{font-size:12px;color:var(--muted);font-weight:700}
+.settings-panel select{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:inherit}
+.settings-panel input[type="color"]{border:none;cursor:pointer;padding:0}
+
+#settingsBtn:focus{outline:2px solid rgba(6,182,212,0.14);outline-offset:2px}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial; background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom)); color:var(--text)}
+.app{height:100vh;display:flex;flex-direction:column;padding:calc(var(--pad)) ;gap:var(--gap);align-items:stretch}
+
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background: var(--topbar-gradient);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  box-shadow: 0 8px 24px rgba(2,6,12,0.18), 0 1px 0 rgba(255,255,255,0.02) inset;
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.03);
+  position:relative;
+  z-index:100;
+}
+/* While assets are loading, the header/footer stay sharp above the blurred backdrop */
+body.loading-blur .header,
+body.loading-blur .footer{
+  position:relative;
+  z-index:210;
+}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{
+  width:46px;height:46px;border-radius:10px;display:grid;place-items:center;
+  background:transparent;
+  box-shadow:0 6px 14px rgba(3,10,18,0.45);
+  overflow:hidden;
+  font-weight:700;color:#ffffff;font-size:18px
+}
+.logo img{width:100%;height:100%;object-fit:cover;display:block}
+.title{line-height:1}
+.title .main{font-weight:700;font-size:16px}
+.title .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+.controls{display:flex;gap:8px;align-items:center}
+.search{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:var(--search-bg, var(--glass));backdrop-filter: blur(6px);
+  min-width:0;flex:1;max-width:280px;
+}
+.search input{background:transparent;border:0;outline:none;color:inherit;font-size:14px;width:100%}
+.icon-btn{
+  background:transparent;border:0;color:var(--muted);padding:8px;border-radius:10px;display:grid;place-items:center;
+  width:44px;height:44px;
+  transition:transform 160ms ease;
+}
+.icon-btn.primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#012123;box-shadow:0 6px 14px rgba(6,182,212,0.12)}
+.icon-btn:active{transform:translateY(1px)}
+
+#settingsBtn{
+  width:52px;
+  height:52px;
+  padding:8px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+}
+#settingsBtn img{
+  width:22px;
+  height:22px;
+  display:block;
+  transform-origin:center center;
+  transform:rotate(0deg);
+  transition: transform 600ms cubic-bezier(.2,.9,.28,1);
+  will-change: transform;
+}
+#settingsBtn:hover img,
+#settingsBtn:focus img{
+  transform:rotate(90deg);
+  transition-duration:540ms;
+}
+#settingsBtn:not(:hover) img{
+  transition-timing-function: cubic-bezier(.6,-0.28,.735,.045);
+  transition-duration:420ms;
+}
+
+/* Games grid */
+.grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  justify-content:center;
+  align-items:flex-start;
+  padding-bottom:8px;
+  overflow:auto;
+}
+
+.card{
+  width: calc(var(--card-base-w) * var(--card-scale));
+  height: calc(var(--card-base-h) * var(--card-scale));
+  background:var(--card-gradient);
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  box-shadow: 0 10px 30px rgba(2,6,12,0.6);
+  flex:0 0 auto;
+  align-items:stretch;
+  justify-content:flex-start;
+  transform: none;
+  transition: width 220ms cubic-bezier(.2,.9,.28,1), height 220ms cubic-bezier(.2,.9,.28,1);
+}
+.thumb{
+  height: calc(var(--card-base-h) * var(--card-scale) * 0.90);
+  min-height: calc(var(--thumb-base-h) * 0.6 * var(--card-scale));
+  border-radius:10px;
+  overflow:hidden;
+  background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.card .meta{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  height: calc(var(--card-base-h) * var(--card-scale) * 0.12);
+  padding: 4px 6px;
+  text-align:center;
+  overflow:hidden;
+}
+.name{font-weight:700;font-size:calc(16px * var(--card-scale));color:var(--text);line-height:1.15}
+.meta .type{font-size:calc(12px * var(--card-scale));color:var(--muted)}
+.desc{font-size:calc(12px * var(--card-scale));color:var(--muted);margin-top:6px;line-height:1.3}
+.modal .desc{font-size:13px;line-height:1.4}
+
+/* Movie styles */
+.movie-app{
+  display:none;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  flex:1;
+  min-height:0;
+  padding-bottom:8px;
+}
+.movie-row-scroll{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  padding-bottom:6px;
+  scrollbar-width:thin;
+}
+.movie-app.active{display:flex}
+
+.movie-featured{
+  position:relative;
+  width:100%;
+  height:calc(340px*var(--movie-card-scale));
+  min-height:180px;
+  border-radius:12px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.movie-featured-bg{
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+  transition:background-image 500ms ease;
+}
+.movie-featured-overlay{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, rgba(2,6,10,0.85) 0%, rgba(2,6,10,0.4) 60%, rgba(2,6,10,0.1) 100%);
+  display:flex;
+  align-items:flex-end;
+  padding:24px;
+  gap:20px;
+}
+.movie-featured-poster{
+  width:calc(120px*var(--movie-card-scale));
+  height:calc(180px*var(--movie-card-scale));
+  border-radius:8px;
+  overflow:hidden;
+  flex-shrink:0;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+}
+.movie-featured-poster img{width:100%;height:100%;object-fit:cover}
+.movie-featured-info{flex:1;padding-bottom:8px}
+.movie-featured-title{font-size:26px;font-weight:800;color:#fff;margin-bottom:4px}
+.movie-featured-meta{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;display:flex;gap:12px;align-items:center}
+.movie-featured-rating{color:#f5c518;font-weight:700}
+.movie-featured-overview{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-width:600px}
+.movie-featured-actions{display:flex;gap:8px;margin-top:10px}
+.movie-featured-dots{
+  position:absolute;
+  bottom:12px;
+  right:24px;
+  display:flex;
+  gap:6px;
+}
+.movie-featured-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,0.25);
+  cursor:pointer;
+  border:0;
+  padding:0;
+  transition:background 180ms ease;
+}
+.movie-featured-dot.active{background:var(--accent);width:24px;border-radius:4px}
+
+.movie-rows{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.movie-row{}
+.movie-row-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:6px;
+}
+.movie-row-title{font-size:15px;font-weight:700;color:var(--text)}
+.movie-row-scroll::-webkit-scrollbar{display:none}
+.movie-card{
+  flex:0 0 auto;
+  width:calc(140px*var(--movie-card-scale));
+  scroll-snap-align:start;
+  cursor:pointer;
+  border-radius:8px;
+  overflow:hidden;
+  background:var(--card-gradient);
+  transition:transform 180ms ease;
+}
+.movie-card:hover{transform:translateY(-3px)}
+.movie-card-poster{
+  width:calc(140px*var(--movie-card-scale));
+  height:calc(210px*var(--movie-card-scale));
+  background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.2));
+  overflow:hidden;
+}
+.movie-card-poster img{width:100%;height:100%;object-fit:cover}
+.movie-card-info{padding:6px 8px}
+.movie-card-title{font-size:calc(12px*var(--movie-card-scale));font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.movie-card-year{font-size:calc(11px*var(--movie-card-scale));color:var(--muted);margin-top:2px}
+
+/* Movie detail modal */
+.movie-modal{
+  width:min(960px,96vw);
+  background:var(--modal-gradient);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 20px 50px rgba(2,6,12,0.8);
+  max-height:90vh;
+  display:flex;
+  flex-direction:column;
+}
+.movie-modal-backdrop{
+  width:100%;
+  height:200px;
+  position:relative;
+  background-size:cover;
+  background-position:center;
+  flex-shrink:0;
+}
+.movie-modal-backdrop-overlay{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(0deg, var(--modal-bottom) 0%, transparent 60%);
+}
+.movie-modal-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:rgba(0,0,0,0.5);
+  border:0;
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  z-index:5;
+}
+.movie-modal-body{
+  padding:0 18px 18px;
+  margin-top:-60px;
+  position:relative;
+  z-index:2;
+  display:flex;
+  gap:16px;
+  flex:1;
+  overflow:auto;
+}
+.movie-modal-poster{
+  width:calc(120px*var(--movie-card-scale));
+  height:calc(180px*var(--movie-card-scale));
+  max-width:180px;
+  max-height:270px;
+  border-radius:8px;
+  overflow:hidden;
+  flex-shrink:0;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+}
+.movie-modal-poster img{width:100%;height:100%;object-fit:cover}
+.movie-modal-info{flex:1;padding-top:40px}
+.movie-modal-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:2px}
+.movie-modal-tagline{font-size:13px;color:var(--muted);font-style:italic;margin-bottom:8px}
+.movie-modal-meta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.movie-modal-rating{color:#f5c518;font-weight:700}
+.movie-modal-genres{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.movie-modal-genre{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.04);
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,0.04);
+}
+.movie-modal-overview{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.movie-modal-section-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;margin-top:12px}
+.movie-modal-cast{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding-bottom:6px;
+}
+.movie-modal-cast-card{
+  flex:0 0 auto;
+  width:90px;
+  text-align:center;
+}
+.movie-modal-cast-img{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  overflow:hidden;
+  margin:0 auto 4px;
+  background:rgba(255,255,255,0.04);
+}
+.movie-modal-cast-img img{width:100%;height:100%;object-fit:cover}
+.movie-modal-cast-name{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.movie-modal-cast-char{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-season-select{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--text);font-size:13px;cursor:pointer}
+.tv-episode-list{display:flex;gap:8px;overflow-x:auto;padding:8px 0 6px;margin-top:6px}
+.tv-episode-card{flex:0 0 auto;width:160px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.02);cursor:pointer;transition:transform 180ms ease;position:relative}
+.tv-episode-card:hover{transform:translateY(-3px)}
+.tv-episode-card img{width:100%;height:90px;object-fit:cover;display:block}
+.tv-episode-number{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.75);color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;z-index:2}
+.tv-episode-title{font-size:12px;font-weight:600;color:var(--text);padding:4px 6px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-episode-desc{font-size:10px;color:var(--muted);padding:0 6px 6px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:0;transition:max-height 200ms ease;opacity:0}
+.tv-episode-card:hover .tv-episode-desc{max-height:40px;opacity:1}
+.movie-modal-actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+  flex-wrap:wrap;
+}
+.movie-btn{
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  padding:9px 14px;
+  border-radius:10px;
+  border:0;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:transform 160ms ease;
+}
+.movie-btn:active{transform:translateY(1px)}
+.movie-btn-primary{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#012123;
+}
+.movie-btn-secondary{
+  background:rgba(255,255,255,0.04);
+  color:var(--text);
+  border:1px solid rgba(255,255,255,0.04);
+}
+
+/* Bottom area containers */
+.games-area{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.games-area.hidden{display:none}
+.movies-area{display:none;flex-direction:column;flex:1;overflow:hidden}
+.movies-area.active{display:flex}
+
+.footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:auto;
+  background: var(--footer-gradient);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  box-shadow: 0 8px 24px rgba(2,6,12,0.18), 0 1px 0 rgba(255,255,255,0.02) inset;
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.game-overlay{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  background:rgba(2,6,10,0.55);
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  opacity:0;
+  pointer-events:none;
+  transform: translateY(6px) scale(0.995);
+  transition: opacity 240ms cubic-bezier(.2,.9,.28,1), transform 260ms cubic-bezier(.2,.9,.28,1);
+  will-change: opacity, transform;
+}
+.game-overlay.show{
+  opacity:1;
+  pointer-events:auto;
+  transform: translateY(0) scale(1);
+}
+.game-frame-wrap{
+  width:100%;height:100%;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;padding:12px;
+}
+.game-topbar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  margin-left:0;
+  padding:8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border-radius:8px;
+  width:100%;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02);
+}
+.chrome-tab{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:linear-gradient(180deg, #f5f6f7, #e9ebee);
+  color:#0b0b0b;
+  padding:6px 8px;
+  border-radius:6px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.08);
+  min-width:220px;
+  max-width:60%;
+  align-self:flex-start;
+}
+.chrome-tab.dark{
+  background: var(--iframe-topbar-gradient);
+  color:var(--text);
+  box-shadow:none;
+}
+.chrome-favicon{
+  width:20px;height:20px;border-radius:3px;overflow:hidden;flex:0 0 auto;background:#fff;display:inline-grid;place-items:center;border:1px solid rgba(0,0,0,0.06)
+}
+.chrome-title{
+  font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px
+}
+.chrome-controls{display:flex;gap:8px;align-items:center;margin-left:auto}
+.chrome-btn{
+  width:36px;height:32px;display:grid;place-items:center;border-radius:6px;border:0;background:transparent;color:inherit;cursor:pointer;
+}
+.chrome-btn:active{transform:translateY(1px)}
+.game-topbar .game-controls{position:relative}
+.game-controls button{min-width:44px;min-height:44px;border-radius:10px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.03);color:var(--text);padding:8px}
+.game-controls .menu{
+  position:absolute;
+  right:0;
+  top:52px;
+  background:var(--modal-gradient);
+  border-radius:10px;
+  padding:6px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  opacity:0;
+  transform:translateY(-6px) scale(0.985);
+  pointer-events:none;
+  transition: opacity 200ms cubic-bezier(.2,.9,.28,1), transform 200ms cubic-bezier(.2,.9,.28,1);
+  will-change: opacity, transform;
+}
+.game-controls .menu.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.game-controls .menu button{display:block;width:160px;text-align:left;padding:8px;border-radius:8px;background:transparent;border:0;color:var(--muted);cursor:pointer}
+.game-controls .menu button:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+.game-iframe{
+  flex:1 1 auto;border-radius:8px;overflow:hidden;background:#000;border:1px solid rgba(255,255,255,0.03);
+}
+.game-iframe iframe{width:100%;height:100%;border:0;display:block}
+.small{font-size:12px;color:var(--muted)}
+
+/* Modal (game) */
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:linear-gradient(180deg,rgba(2,6,10,0.6),rgba(2,6,10,0.75));
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  display:flex;align-items:center;justify-content:center;z-index:60;
+  opacity:0;pointer-events:none;transition:opacity 240ms ease;
+}
+.modal-backdrop.show{opacity:1;pointer-events:auto}
+
+.modal{
+  width:min(960px,96vw);
+  background:var(--modal-gradient);
+  border-radius:14px;padding:18px;
+  box-shadow:0 20px 50px rgba(2,6,12,0.8);
+  max-height:88vh;overflow:auto;
+  transform-origin:center top;
+  transform: translateY(-8px) scale(0.985);
+  opacity:0;
+  transition:transform 260ms cubic-bezier(.2,.9,.28,1), opacity 200ms ease;
+}
+.modal-backdrop.show .modal{
+  transform: translateY(0) scale(1);
+  opacity:1;
+}
+.modal .top{display:flex;align-items:center;gap:16px}
+
+.modal-warning{
+  width:100%;
+  background: linear-gradient(90deg,#ff4d4f,#e53935);
+  color: #fff;
+  padding:8px 10px;
+  border-radius:8px;
+  font-size:13px;
+  box-shadow: 0 6px 16px rgba(229,57,53,0.12);
+  border: 1px solid rgba(255,80,80,0.08);
+  line-height:1.2;
+  white-space:normal;
+  text-align:left;
+}
+.modal .preview{width:160px;height:112px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.25));flex:0 0 auto}
+.modal .body{margin-top:10px; position:relative; min-height:140px;}
+
+.modal-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  padding:12px;
+  border-top:1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.02));
+  position:sticky;
+  bottom:0;
+  align-items:center;
+  justify-content:flex-start;
+  z-index:6;
+}
+
+.modal .tabs{display:flex;gap:8px;margin-top:12px;border-bottom:1px solid rgba(255,255,255,0.03);padding-bottom:8px}
+.modal .tab-btn{background:transparent;border:0;color:var(--muted);padding:8px 10px;border-radius:8px;font-weight:600;cursor:pointer}
+.modal .tab-btn.active{color:var(--accent);background:linear-gradient(90deg, rgba(6,182,212,0.06), rgba(0,174,176,0.02));box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+
+.modal .tab-content{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.4;
+  min-height:54px;
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity 200ms ease, transform 220ms cubic-bezier(.2,.9,.28,1);
+  display:block;
+  will-change:opacity,transform;
+  pointer-events:none;
+}
+.modal .tab-content.visible{ pointer-events:auto; }
+.modal .tab-content.visible{opacity:1;transform:translateY(0)}
+.modal .tab-content .heading{font-weight:700;color:var(--text);margin-bottom:6px}
+
+.launch{display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#012123;border:0;font-weight:700}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(8px);
+  bottom:24px;background:linear-gradient(180deg,var(--modal-top),var(--modal-bottom));color:var(--text);padding:10px 14px;border-radius:10px;
+  opacity:0;pointer-events:none;z-index:80;transition:opacity 220ms ease, transform 220ms cubic-bezier(.2,.9,.28,1);
+}
+.toast.visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+
+@media (max-height:700px){
+  .app{padding:12px}
+  .grid{gap:10px}
+  .card{min-height:96px;padding:8px}
+  .logo{width:42px;height:42px;font-size:16px}
+}
+
+.icon-btn:focus,.launch:focus,.card:focus{outline:2px solid rgba(6,182,212,0.14);outline-offset:2px}
+
+.movie-modal.full-page{
+  width:100vw;
+  max-width:100vw;
+  height:100vh;
+  max-height:100vh;
+  border-radius:0;
+}
+.movie-modal.full-page .movie-modal-backdrop{
+  height:300px;
+}
+.movie-modal.popup-size-adjusted{
+  width:min(calc(960px * var(--popup-size-mult, 1)), 96vw);
+}
+/* Movies area hidden when games tab / vice versa */
+
+/* Netflix-style media player */
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.movie-player-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:#000;
+  display:none;flex-direction:column;
+}
+.movie-player-overlay.active{display:flex}
+.movie-player-topbar{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;padding:14px 20px;
+  background:linear-gradient(180deg,rgba(0,0,0,0.7) 0%,transparent 100%);
+  opacity:0;transition:opacity 300ms ease;
+  pointer-events:none;
+}
+.movie-player-topbar.visible{opacity:1;pointer-events:auto}
+.movie-player-exit{
+  background:transparent;border:0;cursor:pointer;padding:8px;display:grid;place-items:center;
+  width:44px;height:44px;border-radius:50%;
+  transition:background 200ms ease;
+}
+.movie-player-exit:hover{background:rgba(255,255,255,0.1)}
+.movie-player-exit img{width:28px;height:28px;display:block;filter:brightness(0) invert(1)}
+.movie-player-frame{
+  flex:1;border:0;width:100%;height:100%;
+  position:absolute;inset:0;z-index:1;
+}
+.movie-player-loading{
+  position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
+  background:#000;pointer-events:none;
+  opacity:0;transition:opacity 300ms ease;
+}
+.movie-player-loading.active{opacity:1}
+.movie-player-loading img{width:64px;height:64px;animation:spin 1s linear infinite;opacity:0.7}
+.movie-player-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:10;
+  padding:20px 24px 16px;
+  background:linear-gradient(0deg,rgba(0,0,0,0.8) 0%,transparent 100%);
+  opacity:0;transition:opacity 300ms ease;
+  pointer-events:none;
+}
+.movie-player-bottom.visible{opacity:1;pointer-events:auto}
+.player-progress-wrap{width:100%;margin-bottom:14px}
+.player-progress{
+  width:100%;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;cursor:pointer;position:relative;
+  transition:height 150ms ease;
+}
+.player-progress:hover{height:6px}
+.player-progress-fill{
+  height:100%;background:#e50914;border-radius:2px;width:0%;transition:width 100ms linear;
+  position:relative;
+}
+.player-progress-fill::after{
+  content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;background:#e50914;
+  opacity:0;transition:opacity 150ms ease;
+}
+.player-progress:hover .player-progress-fill::after{opacity:1}
+.player-controls-row{
+  display:flex;align-items:center;gap:16px;
+}
+.player-btn{
+  background:transparent;border:0;cursor:pointer;padding:6px;display:grid;place-items:center;
+  width:40px;height:40px;border-radius:4px;
+  transition:transform 120ms ease;
+}
+.player-btn:active{transform:scale(0.92)}
+.player-btn img{width:28px;height:28px;display:block;filter:brightness(0) invert(1)}
+.player-btn-play{width:48px;height:48px}
+.player-btn-play img{width:36px;height:36px}
+.player-spacer{flex:1}
+.player-title{
+  font-family:"NetflixSans",Inter,ui-sans-serif,system-ui,sans-serif;
+  font-size:15px;font-weight:700;color:#fff;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;
+}
+.player-fullscreen-btn img{width:26px;height:26px}
+</style>
+</head>
+<body>
+<div class="app" id="app" aria-live="polite">
+  <div class="header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/htmlandpng/Logo2.png" alt="Logo"></div>
+      <div class="title"><div class="main">TACTICS - V2</div><div class="sub">Welcome back...</div></div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn-main active" id="tabGames">Games</button>
+      <button class="tab-btn-main" id="tabMovies">Movies and TV</button>
+    </div>
+    <div class="controls" role="toolbar" aria-label="controls">
+      <div class="search" title="Search games">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <input id="search" placeholder="Search" aria-label="Search games">
+      </div>
+      <div class="search" id="movieSearchWrap" title="Search movies" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <input id="movieSearch" placeholder="Search movies and TV" aria-label="Search movies and TV">
+      </div>
+      <div style="display:flex;align-items:center;position:relative">
+        <button id="movieExitFullPageBtn" class="icon-btn" title="Exit movie" style="display:none">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/Exit.png" alt="Exit" style="width:22px;height:22px;filter:brightness(0) invert(1)">
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="Settings" aria-haspopup="true" aria-expanded="false">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/htmlandpng/settings_cog.png" alt="Settings">
+        </button>
+        <div id="settingsPanel" class="settings-panel" role="menu" aria-hidden="true">
+          <div class="settings-section" id="gamesSettings">
+            <div class="settings-label">Order by</div>
+            <select id="orderSelect" aria-label="Order games">
+              <option value="added">When added</option>
+              <option value="name">Name</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+          <div class="settings-section" id="gamesSettings2">
+            <div class="settings-label">JSDelivr Branch</div>
+            <select id="branchSelect" aria-label="JSDelivr branch">
+              <option value="main">Main</option>
+              <option value="latest">Latest</option>
+            </select>
+            <div style="font-size:12px;color:var(--muted);margin-top:6px">Switch to load assets from a different jsDelivr tag.</div>
+          </div>
+          <div class="settings-section" id="gamesSettings3">
+            <div class="settings-label">Game Source</div>
+            <select id="sourceSelect" aria-label="Game source">
+              <option value="tactics">TACTICS</option>
+              <option value="gn">GN-Math</option>
+              <option value="truffled">Truffled</option>
+            </select>
+            <div style="font-size:12px;color:var(--muted);margin-top:6px">Choose between the built-in TACTICS list or the GN-Math feed.</div>
+          </div>
+          <div class="settings-section">
+            <div class="settings-label">Theme</div>
+            <select id="themeSelect" aria-label="Select theme">
+              <option value="base">Base</option><option value="light">Light</option><option value="dark">Dark</option>
+              <option value="gn-math">GN-Math</option><option value="truffled">Truffled</option><option value="custom">Custom color</option>
+            </select>
+            <input id="customColor" type="color" value="#06b6d4" title="Custom accent color" style="display:none;margin-top:8px;width:100%;height:36px;padding:4px;border-radius:8px;border:0">
+          </div>
+          <div class="settings-section" id="gamesEntrySizeSection">
+            <div class="settings-label">Entry Size</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="entrySize" type="range" min="1" max="200" value="100" aria-label="Entry size" style="flex:1">
+              <div id="entrySizeLabel" style="min-width:44px;text-align:right;color:var(--muted);font-weight:700">100%</div>
+            </div>
+          </div>
+          <div class="settings-section" id="moviesEntrySizeSection" style="display:none">
+            <div class="settings-label">Movie & TV Entry Size</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="movieEntrySize" type="range" min="1" max="200" value="150" aria-label="Movie & TV entry size" style="flex:1">
+              <div id="movieEntrySizeLabel" style="min-width:44px;text-align:right;color:var(--muted);font-weight:700">150%</div>
+            </div>
+          </div>
+          <div class="settings-section" id="moviesMoreDetailsSection" style="display:none">
+            <div class="settings-label">More Details Style</div>
+            <select id="moreDetailsStyle">
+              <option value="popup">Popup</option>
+              <option value="fullpage">Full Page</option>
+            </select>
+            <div id="moreDetailsPopupSizeWrap" style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+              <div class="settings-label">More Details Popup Size</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="moreDetailsPopupSize" type="range" min="50" max="100" value="50" aria-label="Popup size" style="flex:1">
+                <div id="moreDetailsPopupSizeLabel" style="min-width:44px;text-align:right;color:var(--muted);font-weight:700">50%</div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section" id="gamesSettings4">
+            <div class="settings-label">Open games in new tab</div>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input id="openInNewTab" type="checkbox" aria-label="Open games in new tab">
+              <span style="color:var(--muted);font-size:13px">When enabled, Play opens the game in a separate browser tab instead of embedding.</span>
+            </label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button id="settingsClose" class="icon-btn" title="Close settings">Done</button>
+          </div>
+        </div>
+      </div>
+      <div class="game-topbar" aria-hidden="true" id="gameTopbar" style="display:none">
+        <div class="game-controls" id="gameControls">
+          <button id="gameMenuBtn" title="Game menu">....</button>
+          <div class="menu" id="gameMenu" role="menu" aria-hidden="true">
+            <button id="exitGameBtn" type="button">Exit game</button>
+            <button id="openGameNewTab" type="button">Open in new tab</button>
+            <button id="fullscreenBtn" type="button">Enter fullscreen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="loadError" role="alert" aria-live="assertive" style="display:none;margin-bottom:8px;border-radius:10px;box-shadow:0 6px 16px rgba(229,57,53,0.08);overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(90deg,#ff4d4f,#e53935);color:#fff;font-weight:700">
+      <div id="loadErrorText" style="flex:1"></div>
+      <button id="loadErrorToggle" aria-expanded="false" title="More context" style="margin-left:12px;border:0;background:transparent;color:#fff;padding:6px;border-radius:8px;min-width:44px;display:inline-grid;place-items:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="opacity:.95"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div id="loadErrorDetailsWrap" style="display:none;background:#1a0b0b;color:#fff;padding:10px;font-family:monospace;font-size:12px;max-height:220px;overflow:auto;border-top:1px solid rgba(255,255,255,0.03)">
+      <div style="color:#ffdede;margin-bottom:6px;font-weight:700">Console context (surrounding entries):</div>
+      <pre id="loadErrorDetails" style="white-space:pre-wrap;margin:0"></pre>
+    </div>
+  </div>
+  <div id="assetsLoader" aria-hidden="true" style="position:fixed;inset:0;display:none;z-index:200;align-items:center;justify-content:center;pointer-events:none;backdrop-filter:blur(10px) saturate(110%);-webkit-backdrop-filter:blur(10px) saturate(110%)">
+    <div style="width:min(640px,92vw);max-width:92vw;background:var(--modal-gradient);border-radius:12px;padding:18px;box-shadow:0 30px 80px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03);text-align:center;position:relative;pointer-events:auto">
+      <div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:10px">Loading assets</div>
+      <div style="height:12px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;margin:8px 0">
+        <div id="assetsLoaderBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width 220ms ease"></div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);min-height:20px" id="assetsLoaderText">Preparing...</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted)">Please wait while the game list and covers are loaded.</div>
+      <button id="assetsSkipBtn" style="position:absolute;right:12px;bottom:12px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);display:none">Skip</button>
+    </div>
+  </div>
+  <div id="gamesArea" class="games-area">
+    <div id="grid" class="grid" role="list" aria-label="Games list"></div>
+  </div>
+  <div id="moviesArea" class="movies-area">
+    <div class="movie-app active" id="movieApp">
+      <div class="movie-featured" id="movieFeatured"></div>
+      <div class="movie-rows" id="movieRows"></div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="small" id="count">0 games</div>
+    <div class="small" id="movieCount" style="display:none">0 titles</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a class="icon-btn" id="discordBtn" title="Join Discord" href="https://discord.com/invite/T2nM82RWw2" target="_blank" rel="noopener noreferrer" style="display:inline-grid;place-items:center">
+        <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/logos/Discord.png" alt="Discord" style="width:20px;height:20px;display:block">
+      </a>
+      <button class="icon-btn" id="resetBtn" title="Reset to sample">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 14a8 8 0 10-2.14 4.85" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 14v-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="legalBtn" class="icon-btn" title="Legal disclaimers" aria-haspopup="dialog" style="min-width:80px;padding:8px;border-radius:10px">Legal</button>
+    </div>
+  </div>
+</div>
+  <div class="game-overlay" id="gameOverlay" aria-hidden="true">
+    <div class="game-frame-wrap">
+      <div class="game-topbar">
+        <div id="chromeTab" class="chrome-tab dark" aria-hidden="false">
+          <div class="chrome-favicon" id="chromeFavicon"><img src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none" id="chromeFaviconImg"></div>
+          <div class="chrome-title" id="chromeTitle">Game</div>
+          <div class="chrome-controls" style="margin-left:10px">
+            <button class="chrome-btn" id="iframeBack" title="Back">◀</button>
+            <button class="chrome-btn" id="iframeForward" title="Forward">▶</button>
+            <button class="chrome-btn" id="iframeRefresh" title="Reload">⟲</button>
+          </div>
+        </div>
+        <div class="game-controls" id="overlayControls" style="margin-left:auto">
+          <button id="overlayMenuBtn" title="Game menu">...</button>
+          <div class="menu" id="overlayMenu" role="menu" aria-hidden="true">
+            <button id="overlayExitBtn" type="button">Exit game</button>
+            <button id="overlayRefreshBtn" type="button">Refresh</button>
+            <button id="overlayOpenNewTab" type="button">Open in new tab</button>
+            <button id="overlayFullscreenBtn" type="button">Enter fullscreen</button>
+          </div>
+        </div>
+      </div>
+      <div class="game-iframe" id="gameFrameWrap"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Game details">
+      <div class="top">
+        <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:8px;width:140px">
+          <div class="preview" id="modalThumb" style="width:140px;height:96px;"></div>
+          <div id="modalWarning" class="modal-warning" style="display:none"></div>
+        </div>
+        <div>
+          <div id="modalName" style="font-weight:800;font-size:16px"></div>
+          <div id="modalType" style="color:var(--muted);font-size:12px;margin-top:6px"></div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="icon-btn" id="closeModal" title="Close">X</button>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Game details tabs">
+        <button class="tab-btn active" role="tab" data-tab="description" id="tabDesc">Description</button>
+        <button class="tab-btn" role="tab" data-tab="features" id="tabFeat">Features</button>
+        <button class="tab-btn" role="tab" data-tab="personal" id="tabPersonal">Personal</button>
+      </div>
+      <div class="body">
+        <div id="tabContentDescription" class="tab-content" role="tabpanel" aria-labelledby="tabDesc">
+          <div class="heading">Description</div>
+          <div id="modalDesc" class="desc"></div>
+        </div>
+        <div id="tabContentFeatures" class="tab-content" role="tabpanel" aria-labelledby="tabFeat" style="display:none">
+          <div class="heading">Features</div>
+          <div id="modalFeatures" class="desc" style="color:var(--muted)"></div>
+        </div>
+        <div id="tabContentPersonal" class="tab-content" role="tabpanel" aria-labelledby="tabPersonal" style="display:none">
+          <div class="heading">Personal</div>
+          <div class="desc" style="color:var(--muted)">
+            <div style="margin-bottom:8px"><strong>Playtime:</strong> <span id="modalPlaytime">0m</span></div>
+            <div><strong>Last played:</strong> <span id="modalLastPlayed">Never</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="launch" id="playBtn">Play</button>
+        <button id="downloadBtn" title="Download HTML" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:700;padding:10px 12px;border-radius:10px;min-width:120px;height:44px;display:inline-flex;align-items:center;justify-content:center">Download</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="movieDetailModal" aria-hidden="true">
+    <div class="movie-modal">
+      <div class="movie-modal-backdrop" id="mdbg">
+        <div class="movie-modal-backdrop-overlay"></div>
+        <button class="movie-modal-close" id="movieModalClose">X</button>
+      </div>
+      <div class="movie-modal-body">
+        <div class="movie-modal-poster" id="mdposter"></div>
+        <div class="movie-modal-info">
+          <div class="movie-modal-title" id="mdtitle"></div>
+          <div class="movie-modal-tagline" id="mdtagline"></div>
+          <div class="movie-modal-meta" id="mdmeta"></div>
+          <div class="movie-modal-genres" id="mdgenres"></div>
+          <div class="movie-modal-overview" id="mdoverview"></div>
+          <div class="movie-modal-actions" id="mdactions"></div>
+          <div id="mdEpisodes"></div>
+          <div id="mdcast"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Netflix-style media player -->
+  <div class="movie-player-overlay" id="moviePlayerOverlay">
+    <div class="movie-player-topbar" id="moviePlayerTopbar">
+      <button class="movie-player-exit" id="moviePlayerExit" title="Exit">
+        <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/Exit.png" alt="Exit">
+      </button>
+      <div class="player-title" id="moviePlayerTitle">Now Playing</div>
+    </div>
+    <div class="movie-player-loading active" id="moviePlayerLoading">
+      <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/loading.png" alt="Loading">
+    </div>
+    <iframe class="movie-player-frame" id="moviePlayerFrame" allow="autoplay;fullscreen"></iframe>
+    <div class="movie-player-bottom" id="moviePlayerBottom">
+      <div class="player-progress-wrap">
+        <div class="player-progress" id="playerProgress">
+          <div class="player-progress-fill" id="playerProgressFill"></div>
+        </div>
+      </div>
+      <div class="player-controls-row">
+        <button class="player-btn" id="playerSkipBack" title="Back 10 seconds">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/SkipBackground.png" alt="Back 10">
+        </button>
+        <button class="player-btn player-btn-play" id="playerPlayPause" title="Pause">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/Pause.png" alt="Pause">
+        </button>
+        <button class="player-btn" id="playerSkipForward" title="Skip 10 seconds">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/SkipForward.png" alt="Skip 10">
+        </button>
+        <div class="player-spacer"></div>
+        <button class="player-btn player-fullscreen-btn" id="playerFullscreen" title="Enter Fullscreen">
+          <img src="https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/EnterFull.png" alt="Fullscreen">
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="legalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Legal disclaimers" style="max-width:780px">
+      <div class="top">
+        <div style="flex:1 1 auto">
+          <div style="font-weight:800;font-size:30px">Legal Disclaimers</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="icon-btn" id="closeLegal" title="Close">X</button>
+        </div>
+      </div>
+      <div class="body" style="padding-top:12px">
+        <div id="legalContent" style="color:var(--muted);font-size:13px;line-height:1.45;max-height:52vh;overflow:auto;padding-right:6px"></div>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- Configurable Data ---------- */
+let selectedBranch = localStorage.getItem('gamesHub_branch') || 'main';
+let selectedSource = 'tactics';
+
+function getTacticsGameListUrl(){
+  return `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2@${selectedBranch}/assets/json/game.json`;
+}
+function getTacticsAssetCdn(){
+  return `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2@${selectedBranch}/assets/htmlandpng/`;
+}
+
+const GN_JSON_URL = 'https://cdn.jsdelivr.net/gh/freebuisness/assets@49d62950dfa7ad15275503a30ecffcc3a27e7b9d/zones.json';
+const GN_HTML_BASE = 'https://cdn.jsdelivr.net/gh/freebuisness/html';
+const GN_COVER_BASE = 'https://cdn.jsdelivr.net/gh/freebuisness/covers';
+let selectedTruffledBase = null;
+let GAME_LIST_URL = getGameListUrl();
+
+let games = [];
+let _assetsSkip = false;
+let _assetsSkipTimer = null;
+let _gamesLoading = false;
+let _hideLoaderUntilGamesTab = false;
+
+/* ---------- TMDB ---------- */
+const TMDB_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkZThhNWU1ZTkwYmZiYTdkZGI0MjVlMzU2NDE1ZDE2NyIsIm5iZiI6MTc4NTQyNjcwNC45NTEsInN1YiI6IjZhNmI3MzEwMmVkMWMyMWQ5M2UwZDkwZCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.zCvrc8fO7-9Ghyem3lBimxqifP6ZxY5BcjIaD0BCVyU';
+const TMDB_IMG = 'https://image.tmdb.org/t/p';
+
+async function tmdbFetch(endpoint){
+  const res = await fetch(`https://api.themoviedb.org/3${endpoint}`, {
+    headers: { Authorization: `Bearer ${TMDB_TOKEN}`, accept: 'application/json' }
+  });
+  if(!res.ok) throw new Error('TMDB error ' + res.status);
+  return res.json();
+}
+
+async function loadMovies(){
+  const [popular, topRated, nowPlaying, tvPopular] = await Promise.all([
+    tmdbFetch('/movie/popular?language=en-US&page=1'),
+    tmdbFetch('/movie/top_rated?language=en-US&page=1'),
+    tmdbFetch('/movie/now_playing?language=en-US&page=1'),
+    tmdbFetch('/tv/popular?language=en-US&page=1')
+  ]);
+  return { popular: popular.results || [], topRated: topRated.results || [], nowPlaying: nowPlaying.results || [], tvPopular: tvPopular.results || [] };
+}
+
+function getPosterUrl(path, size='w500'){
+  return path ? TMDB_IMG + '/' + size + path : '';
+}
+function getBackdropUrl(path, size='w1280'){
+  return path ? TMDB_IMG + '/' + size + path : '';
+}
+
+/* ---------- Tab state ---------- */
+let activeTab = 'games';
+
+/* ---------- UI references ---------- */
+const grid = document.getElementById('grid');
+const countEl = document.getElementById('count');
+const searchInput = document.getElementById('search');
+const resetBtn = document.getElementById('resetBtn');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalThumb = document.getElementById('modalThumb');
+const modalName = document.getElementById('modalName');
+const modalType = document.getElementById('modalType');
+const modalDesc = document.getElementById('modalDesc');
+const playBtn = document.getElementById('playBtn');
+const closeModal = document.getElementById('closeModal');
+const toast = document.getElementById('toast');
+
+const gamesArea = document.getElementById('gamesArea');
+const moviesArea = document.getElementById('moviesArea');
+const tabGames = document.getElementById('tabGames');
+const tabMovies = document.getElementById('tabMovies');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsPanel = document.getElementById('settingsPanel');
+const settingsClose = document.getElementById('settingsClose');
+const orderSelect = document.getElementById('orderSelect');
+const themeSelect = document.getElementById('themeSelect');
+const customColor = document.getElementById('customColor');
+const entrySize = document.getElementById('entrySize');
+const entrySizeLabel = document.getElementById('entrySizeLabel');
+const movieEntrySize = document.getElementById('movieEntrySize');
+const movieEntrySizeLabel = document.getElementById('movieEntrySizeLabel');
+const moreDetailsStyle = document.getElementById('moreDetailsStyle');
+const moreDetailsPopupSize = document.getElementById('moreDetailsPopupSize');
+const moreDetailsPopupSizeLabel = document.getElementById('moreDetailsPopupSizeLabel');
+const moreDetailsPopupSizeWrap = document.getElementById('moreDetailsPopupSizeWrap');
+
+/* Movie area elements */
+const movieFeatured = document.getElementById('movieFeatured');
+const movieFeaturedBg = document.getElementById('movieFeaturedBg');
+const movieFeaturedPoster = document.getElementById('movieFeaturedPoster');
+const movieFeaturedTitle = document.getElementById('movieFeaturedTitle');
+const movieFeaturedMeta = document.getElementById('movieFeaturedMeta');
+const movieFeaturedOverview = document.getElementById('movieFeaturedOverview');
+const movieFeaturedPlay = document.getElementById('movieFeaturedPlay');
+const movieFeaturedDots = document.getElementById('movieFeaturedDots');
+const movieRows = document.getElementById('movieRows');
+const movieSearchInput = document.getElementById('movieSearch');
+const movieCountEl = document.getElementById('movieCount');
+const movieModal = document.getElementById('movieModal');
+const movieModalClose = document.getElementById('movieModalClose');
+const movieModalBackdrop = document.getElementById('movieModalBackdrop');
+const movieDetailModal = document.getElementById('movieDetailModal');
+
+let movieData = { popular: [], topRated: [], nowPlaying: [], tvPopular: [] };
+let featuredIndex = 0;
+let featuredTimer = null;
+
+
+// Tab listeners
+tabGames.addEventListener('click', ()=> switchTab('games'));
+tabMovies.addEventListener('click', ()=> switchTab('movies'));
+// Settings listeners
+settingsBtn.addEventListener('click', toggleSettings);
+settingsClose.addEventListener('click', closeSettingsPanel);
+// Movie listeners
+movieSearchInput.addEventListener('input', debounce(e=>{
+  const q = e.target.value.trim();
+  if(q) searchMovies(q);
+  else renderMovieView(movieData);
+}, 300));
+movieModalClose.addEventListener('click', closeMovieModal);
+movieDetailModal.addEventListener('click', (e)=>{
+  if(e.target === movieDetailModal) closeMovieModal();
+});
+
+
+init();
+async function init(){
+  games = await loadGames();
+  renderGrid(games);
+  updateCount();
+  loadSettings();
+}
+
+/* ---------- Tab switching ---------- */
+function switchTab(tab){
+  activeTab = tab;
+  tabGames.classList.toggle('active', tab === 'games');
+  tabMovies.classList.toggle('active', tab === 'movies');
+  gamesArea.classList.toggle('hidden', tab !== 'games');
+  moviesArea.classList.toggle('active', tab === 'movies');
+
+  if(tab === 'movies'){
+    document.querySelector('.header .controls .search').style.display = 'none';
+    document.getElementById('movieSearchWrap').style.display = '';
+    document.getElementById('gamesSettings').style.display = 'none';
+    document.getElementById('gamesSettings2').style.display = 'none';
+    document.getElementById('gamesSettings3').style.display = 'none';
+    document.getElementById('gamesSettings4').style.display = 'none';
+    document.getElementById('gamesEntrySizeSection').style.display = 'none';
+    document.getElementById('moviesEntrySizeSection').style.display = '';
+    document.getElementById('moviesMoreDetailsSection').style.display = '';
+    document.getElementById('count').style.display = 'none';
+    document.getElementById('movieCount').style.display = '';
+    document.getElementById('resetBtn').style.display = 'none';
+    applyMovieEntrySize(movieEntrySize ? movieEntrySize.value : 100);
+    if(!movieData.popular.length) initMovies();
+
+    if(_gamesLoading){
+      const loader = document.getElementById('assetsLoader');
+      if(loader && loader.style.display === 'flex'){
+        loader.style.display = 'none';
+        loader.setAttribute('aria-hidden','true');
+        document.body.classList.remove('loading-blur');
+        _hideLoaderUntilGamesTab = true;
+      }
+    }
+  } else {
+    document.querySelector('.header .controls .search').style.display = '';
+    document.getElementById('movieSearchWrap').style.display = 'none';
+    document.getElementById('gamesSettings').style.display = '';
+    document.getElementById('gamesSettings2').style.display = '';
+    document.getElementById('gamesSettings3').style.display = '';
+    document.getElementById('gamesSettings4').style.display = '';
+    document.getElementById('gamesEntrySizeSection').style.display = '';
+    document.getElementById('moviesEntrySizeSection').style.display = 'none';
+    document.getElementById('moviesMoreDetailsSection').style.display = 'none';
+    document.getElementById('count').style.display = '';
+    document.getElementById('movieCount').style.display = 'none';
+    document.getElementById('resetBtn').style.display = '';
+    applyEntrySize(entrySize ? entrySize.value : 100);
+
+    if(_hideLoaderUntilGamesTab && _gamesLoading){
+      const loader = document.getElementById('assetsLoader');
+      if(loader){
+        loader.style.display = 'flex';
+        loader.setAttribute('aria-hidden','false');
+        document.body.classList.add('loading-blur');
+      }
+      _hideLoaderUntilGamesTab = false;
+    }
+  }
+  closeSettingsPanel();
+}
+
+/* ---------- Settings ---------- */
+function toggleSettings(e){
+  const open = settingsPanel.getAttribute('aria-hidden') === 'false';
+  settingsPanel.setAttribute('aria-hidden', String(open ? 'true' : 'false'));
+  settingsBtn.setAttribute('aria-expanded', String(!open));
+  if(!open) settingsPanel.querySelector('select')?.focus();
+}
+function closeSettingsPanel(){
+  settingsPanel.setAttribute('aria-hidden','true');
+  settingsBtn.setAttribute('aria-expanded','false');
+}
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest) return;
+  if(!e.target.closest('#settingsPanel') && !e.target.closest('#settingsBtn')){
+    settingsPanel.setAttribute('aria-hidden','true');
+    settingsBtn.setAttribute('aria-expanded','false');
+  }
+});
+
+/* ---------- Movies ---------- */
+async function initMovies(){
+  try{
+    showToast('Loading movies...');
+    movieData = await loadMovies();
+    renderMovieView(movieData);
+    showToast('Movies loaded');
+  }catch(e){
+    console.error(e);
+    showToast('Failed to load movies');
+  }
+}
+
+let currentMovie = null;
+let movieSearchResults = null;
+
+function renderMovieView(data){
+  const popular = data.popular || [];
+  const topRated = data.topRated || [];
+  const nowPlaying = data.nowPlaying || [];
+  const tvPopular = data.tvPopular || [];
+
+  movieCountEl.textContent = (popular.length + topRated.length + nowPlaying.length + tvPopular.length) + ' titles';
+
+  if(popular.length) renderFeatured(popular);
+  else movieFeatured.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">No movies</div>';
+
+  movieRows.innerHTML = '';
+  if(topRated.length) appendRow('Top Rated', topRated);
+  if(nowPlaying.length) appendRow('Now Playing', nowPlaying);
+  if(popular.length > 5) appendRow('More Popular', popular.slice(5));
+  if(tvPopular.length) appendTVRow('Popular TV Shows', tvPopular);
+}
+
+function renderFeatured(movies){
+  const items = movies.slice(0, 6);
+  movieFeatured.innerHTML = `
+    <div class="movie-featured-bg" id="featuredBg"></div>
+    <div class="movie-featured-overlay">
+      <div class="movie-featured-poster" id="featuredPoster"></div>
+      <div class="movie-featured-info">
+        <div class="movie-featured-title" id="featuredTitle"></div>
+        <div class="movie-featured-meta" id="featuredMeta"></div>
+        <div class="movie-featured-overview" id="featuredOverview"></div>
+        <div class="movie-featured-actions">
+          <button class="movie-btn movie-btn-primary" id="featuredPlayBtn">▶ Play</button>
+        </div>
+      </div>
+    </div>
+    <div class="movie-featured-dots" id="featuredDots"></div>
+  `;
+
+  const bg = document.getElementById('featuredBg');
+  const poster = document.getElementById('featuredPoster');
+  const title = document.getElementById('featuredTitle');
+  const meta = document.getElementById('featuredMeta');
+  const overview = document.getElementById('featuredOverview');
+  const dots = document.getElementById('featuredDots');
+  const playBtnFeat = document.getElementById('featuredPlayBtn');
+
+  items.forEach((m, i)=>{
+    const d = document.createElement('button');
+    d.className = 'movie-featured-dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', ()=>{
+      setFeatured(i);
+      clearInterval(featuredTimer);
+    });
+    dots.appendChild(d);
+  });
+
+  function setFeatured(i){
+    const m = items[i];
+    if(!m) return;
+    featuredIndex = i;
+    currentMovie = m;
+    bg.style.backgroundImage = `url(${getBackdropUrl(m.backdrop_path)})`;
+    poster.innerHTML = `<img src="${getPosterUrl(m.poster_path)}" alt="${m.title}">`;
+    title.textContent = m.title;
+    const year = m.release_date ? m.release_date.slice(0,4) : '';
+    const rating = m.vote_average ? m.vote_average.toFixed(1) : 'N/A';
+    meta.innerHTML = `<span>${year}</span><span class="movie-featured-rating">★ ${rating}</span>`;
+    overview.textContent = m.overview || '';
+    dots.querySelectorAll('.movie-featured-dot').forEach((d,j)=> d.classList.toggle('active', j === i));
+  }
+
+  setFeatured(0);
+  featuredTimer = setInterval(()=> setFeatured((featuredIndex + 1) % items.length), 5000);
+
+  playBtnFeat.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(currentMovie) {
+      closeMovieModal();
+      playMovieWithPicker(currentMovie, false);
+    }
+  });
+  poster.addEventListener('click', ()=> openMovieDetail(currentMovie));
+  title.addEventListener('click', ()=> openMovieDetail(currentMovie));
+}
+
+function appendRow(label, movies){
+  const row = document.createElement('div');
+  row.className = 'movie-row';
+  row.innerHTML = `
+    <div class="movie-row-header">
+      <div class="movie-row-title">${label}</div>
+    </div>
+    <div class="movie-row-scroll"></div>
+  `;
+  const scroll = row.querySelector('.movie-row-scroll');
+  movies.forEach(m=>{
+    const card = document.createElement('div');
+    card.className = 'movie-card';
+    card.innerHTML = `
+      <div class="movie-card-poster">${m.poster_path ? `<img src="${getPosterUrl(m.poster_path)}" alt="${m.title}" loading="lazy">` : ''}</div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">${m.title}</div>
+        <div class="movie-card-year">${m.release_date ? m.release_date.slice(0,4) : ''}</div>
+      </div>
+    `;
+    card.addEventListener('click', ()=> openMovieDetail(m));
+    scroll.appendChild(card);
+  });
+  movieRows.appendChild(row);
+}
+
+function appendTVRow(label, shows){
+  const row = document.createElement('div');
+  row.className = 'movie-row';
+  row.innerHTML = `
+    <div class="movie-row-header">
+      <div class="movie-row-title">${label}</div>
+    </div>
+    <div class="movie-row-scroll"></div>
+  `;
+  const scroll = row.querySelector('.movie-row-scroll');
+  shows.forEach(m=>{
+    const card = document.createElement('div');
+    card.className = 'movie-card';
+    card.innerHTML = `
+      <div class="movie-card-poster">${m.poster_path ? `<img src="${getPosterUrl(m.poster_path)}" alt="${m.name}" loading="lazy">` : ''}</div>
+      <div class="movie-card-info">
+        <div class="movie-card-title">${m.name}</div>
+        <div class="movie-card-year">${m.first_air_date ? m.first_air_date.slice(0,4) : ''}</div>
+      </div>
+    `;
+    card.addEventListener('click', ()=> openTVShowDetail(m));
+    scroll.appendChild(card);
+  });
+  movieRows.appendChild(row);
+}
+
+async function searchMovies(q){
+  try{
+    const [movieData, tvData] = await Promise.all([
+      tmdbFetch(`/search/movie?query=${encodeURIComponent(q)}&language=en-US&page=1`),
+      tmdbFetch(`/search/tv?query=${encodeURIComponent(q)}&language=en-US&page=1`)
+    ]);
+    const movieResults = (movieData.results || []).slice(0, 10);
+    const tvResults = (tvData.results || []).slice(0, 10);
+    renderSearchResults(movieResults, tvResults);
+  }catch(e){
+    showToast('Search failed');
+  }
+}
+
+function renderSearchResults(movieResults, tvResults){
+  const total = movieResults.length + tvResults.length;
+  if(!total){
+    movieRows.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">No results found</div>';
+    movieCountEl.textContent = '0 titles';
+    return;
+  }
+  movieFeatured.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:13px">Search results</div>';
+  movieRows.innerHTML = '';
+  if(movieResults.length) appendRow('Movie Results', movieResults);
+  if(tvResults.length) appendTVRow('TV Show Results', tvResults);
+  movieCountEl.textContent = total + ' title' + (total !== 1 ? 's' : '');
+}
+
+async function openMovieDetail(movie){
+  currentMovie = movie;
+  const epEl = document.getElementById('mdEpisodes');
+  if(epEl) epEl.innerHTML = '';
+  let details, credits, videos;
+  try{
+    [details, credits, videos] = await Promise.all([
+      tmdbFetch(`/movie/${movie.id}?language=en-US`),
+      tmdbFetch(`/movie/${movie.id}/credits?language=en-US`),
+      tmdbFetch(`/movie/${movie.id}/videos?language=en-US`)
+    ]);
+  }catch(e){
+    details = movie;
+    credits = { cast: [] };
+    videos = { results: [] };
+  }
+
+  const mdbg = getBackdropUrl(details.backdrop_path) || getPosterUrl(details.poster_path, 'original');
+  document.getElementById('mdbg').style.backgroundImage = `url(${mdbg})`;
+  document.getElementById('mdposter').innerHTML = `<img src="${getPosterUrl(details.poster_path)}" alt="${details.title}">`;
+  document.getElementById('mdtitle').textContent = details.title;
+  document.getElementById('mdtagline').textContent = details.tagline || '';
+  const year = details.release_date ? details.release_date.slice(0,4) : '';
+  const rating = details.vote_average ? details.vote_average.toFixed(1) : 'N/A';
+  const runtime = details.runtime ? details.runtime + ' min' : '';
+  document.getElementById('mdmeta').innerHTML = `<span>${year}</span><span class="movie-modal-rating">★ ${rating}</span>${runtime ? '<span>'+runtime+'</span>' : ''}`;
+  const genresEl = document.getElementById('mdgenres');
+  genresEl.innerHTML = (details.genres || []).map(g => `<span class="movie-modal-genre">${g.name}</span>`).join('');
+  document.getElementById('mdoverview').textContent = details.overview || 'No overview available.';
+
+  const trailer = (videos.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube');
+  const actionsEl = document.getElementById('mdactions');
+  const trailerBtn = trailer ? `<button class="movie-btn movie-btn-secondary" id="playTrailerBtn">▶ Play Trailer</button>` : '';
+  const playBtnHtml = `<button class="movie-btn movie-btn-primary" id="playMovieBtn">▶ Play</button>`;
+  actionsEl.innerHTML = playBtnHtml + trailerBtn;
+  document.getElementById('playMovieBtn')?.addEventListener('click', ()=>{
+    closeMovieModal();
+    playMovieWithPicker(details, false);
+  });
+  document.getElementById('playTrailerBtn')?.addEventListener('click', ()=>{
+    if(trailer) window.open(`https://www.youtube.com/watch?v=${trailer.key}`, '_blank');
+    else showToast('No trailer available');
+  });
+
+  const cast = (credits.cast || []).slice(0, 12);
+  const castEl = document.getElementById('mdcast');
+  if(cast.length){
+    castEl.innerHTML = '<div class="movie-modal-section-title">Top Cast</div><div class="movie-modal-cast">' +
+      cast.map(c => `
+        <div class="movie-modal-cast-card">
+          <div class="movie-modal-cast-img">${c.profile_path ? `<img src="${getPosterUrl(c.profile_path, 'w185')}" alt="${c.name}">` : ''}</div>
+          <div class="movie-modal-cast-name">${c.name}</div>
+          <div class="movie-modal-cast-char">${c.character || ''}</div>
+        </div>
+      `).join('') + '</div>';
+  } else {
+    castEl.innerHTML = '';
+  }
+
+  applyMoreDetailsStyle();
+  movieDetailModal.classList.add('show');
+  movieDetailModal.setAttribute('aria-hidden','false');
+}
+
+async function openTVShowDetail(show){
+  currentMovie = show;
+  let details, credits, videos;
+  try{
+    [details, credits, videos] = await Promise.all([
+      tmdbFetch(`/tv/${show.id}?language=en-US`),
+      tmdbFetch(`/tv/${show.id}/credits?language=en-US`),
+      tmdbFetch(`/tv/${show.id}/videos?language=en-US`)
+    ]);
+  }catch(e){
+    details = show;
+    credits = { cast: [] };
+    videos = { results: [] };
+  }
+
+  const mdbg = getBackdropUrl(details.backdrop_path) || getPosterUrl(details.poster_path, 'original');
+  document.getElementById('mdbg').style.backgroundImage = `url(${mdbg})`;
+  document.getElementById('mdposter').innerHTML = `<img src="${getPosterUrl(details.poster_path)}" alt="${details.name}">`;
+  document.getElementById('mdtitle').textContent = details.name;
+  document.getElementById('mdtagline').textContent = details.tagline || '';
+  const year = details.first_air_date ? details.first_air_date.slice(0,4) : '';
+  const rating = details.vote_average ? details.vote_average.toFixed(1) : 'N/A';
+  const seasonsText = details.number_of_seasons ? details.number_of_seasons + ' season' + (details.number_of_seasons > 1 ? 's' : '') : '';
+  document.getElementById('mdmeta').innerHTML = `<span>${year}</span><span class="movie-modal-rating">★ ${rating}</span>${seasonsText ? '<span>'+seasonsText+'</span>' : ''}`;
+  const genresEl = document.getElementById('mdgenres');
+  genresEl.innerHTML = (details.genres || []).map(g => `<span class="movie-modal-genre">${g.name}</span>`).join('');
+  document.getElementById('mdoverview').textContent = details.overview || 'No overview available.';
+
+  const trailers = (videos.results || []).filter(v => v.type === 'Trailer' && v.site === 'YouTube');
+  const extras = (videos.results || []).filter(v => v.type !== 'Trailer' && v.site === 'YouTube' && ['Behind the Scenes', 'Featurette', 'Clip'].includes(v.type));
+  const seasons = (details.seasons || []).filter(s => s.season_number > 0);
+
+  const actionsEl = document.getElementById('mdactions');
+  let seasonHtml = '';
+  if(seasons.length){
+    seasonHtml = `<select class="tv-season-select" id="tvSeasonSelect">${seasons.map(s => `<option value="${s.season_number}">Season ${s.season_number}${s.episode_count ? ' (' + s.episode_count + ' eps)' : ''}</option>`).join('')}</select>`;
+  }
+  let extrasHtml = '';
+  if(extras.length){
+    extrasHtml = `<select class="tv-season-select" id="tvExtrasSelect" style="margin-left:6px"><option value="">Extras</option>${extras.map((v,i) => `<option value="${i}">${v.type}: ${v.name}</option>`).join('')}</select>`;
+  }
+  let trailerHtml = '';
+  if(trailers.length){
+    trailerHtml = `<select class="tv-season-select" id="tvTrailerSelect" style="margin-left:6px"><option value="">Trailers</option>${trailers.map((v,i) => `<option value="${i}">${v.name}</option>`).join('')}</select>`;
+  }
+  actionsEl.innerHTML = seasonHtml + extrasHtml + trailerHtml;
+
+  document.getElementById('tvSeasonSelect')?.addEventListener('change', async (e)=>{
+    const seasonNum = parseInt(e.target.value);
+    if(!seasonNum) return;
+    try{
+      const seasonData = await tmdbFetch(`/tv/${show.id}/season/${seasonNum}?language=en-US`);
+      renderEpisodes(seasonData.episodes || [], seasonNum);
+    }catch(err){
+      showToast('Failed to load episodes');
+    }
+  });
+  document.getElementById('tvExtrasSelect')?.addEventListener('change', (e)=>{
+    const idx = parseInt(e.target.value);
+    if(!isNaN(idx) && extras[idx]) window.open(`https://www.youtube.com/watch?v=${extras[idx].key}`, '_blank');
+    e.target.value = '';
+  });
+  document.getElementById('tvTrailerSelect')?.addEventListener('change', (e)=>{
+    const idx = parseInt(e.target.value);
+    if(!isNaN(idx) && trailers[idx]) window.open(`https://www.youtube.com/watch?v=${trailers[idx].key}`, '_blank');
+    e.target.value = '';
+  });
+
+  const epEl = document.getElementById('mdEpisodes');
+  if(epEl) epEl.innerHTML = '';
+
+  if(seasons.length){
+    try{
+      const firstSeason = await tmdbFetch(`/tv/${show.id}/season/${seasons[0].season_number}?language=en-US`);
+      renderEpisodes(firstSeason.episodes || [], seasons[0].season_number);
+    }catch(e){
+      const el = document.getElementById('mdEpisodes');
+      if(el) el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">Failed to load episodes</div>';
+    }
+  }
+
+  const cast = (credits.cast || []).slice(0, 12);
+  const castEl = document.getElementById('mdcast');
+  if(cast.length){
+    castEl.innerHTML = '<div class="movie-modal-section-title">Top Cast</div><div class="movie-modal-cast">' +
+      cast.map(c => `
+        <div class="movie-modal-cast-card">
+          <div class="movie-modal-cast-img">${c.profile_path ? `<img src="${getPosterUrl(c.profile_path, 'w185')}" alt="${c.name}">` : ''}</div>
+          <div class="movie-modal-cast-name">${c.name}</div>
+          <div class="movie-modal-cast-char">${c.character || ''}</div>
+        </div>
+      `).join('') + '</div>';
+  } else {
+    castEl.innerHTML = '';
+  }
+
+  applyMoreDetailsStyle();
+  movieDetailModal.classList.add('show');
+  movieDetailModal.setAttribute('aria-hidden','false');
+}
+
+function renderEpisodes(episodes, seasonNum){
+  let epContainer = document.getElementById('mdEpisodes');
+  if(!epContainer){
+    epContainer = document.createElement('div');
+    epContainer.id = 'mdEpisodes';
+    document.getElementById('mdtitle')?.closest('.movie-modal-info')?.appendChild(epContainer);
+  }
+  if(!episodes.length){
+    epContainer.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">No episodes for this season</div>';
+    return;
+  }
+  epContainer.innerHTML = `<div class="movie-modal-section-title">Season ${seasonNum} Episodes</div><div class="tv-episode-list">` +
+    episodes.map(ep => `
+      <div class="tv-episode-card" data-episode='${JSON.stringify({id: ep.id, name: ep.name, overview: ep.overview || '', season_number: seasonNum, episode_number: ep.episode_number, still_path: ep.still_path})}'>
+        <div class="tv-episode-number">${ep.episode_number}</div>
+        ${ep.still_path ? `<img src="${getPosterUrl(ep.still_path, 'w300')}" alt="${ep.name}">` : '<div style="height:90px;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:28px">▶</div>'}
+        <div class="tv-episode-title">${ep.name}</div>
+        <div class="tv-episode-desc">${ep.overview || 'No description available'}</div>
+      </div>
+    `).join('') + '</div>';
+  epContainer.querySelectorAll('.tv-episode-card').forEach(el => {
+    el.addEventListener('click', () => {
+      try{
+        const data = JSON.parse(el.getAttribute('data-episode'));
+        if(data && currentMovie){
+          closeMovieModal();
+          playMovieWithPicker(currentMovie, true, data.season_number, data.episode_number);
+        }
+      }catch(e){ showToast('Episode play not yet implemented'); }
+    });
+  });
+}
+
+function closeMovieModal(){
+  movieDetailModal.classList.remove('show');
+  movieDetailModal.setAttribute('aria-hidden','true');
+  const epEl = document.getElementById('mdEpisodes');
+  if(epEl) epEl.innerHTML = '';
+}
+
+/* ---------- Games loading ---------- */
+async function pickTruffledServer(){
+  return await new Promise(async (resolve)=>{
+    const picker = document.createElement('div');
+    picker.style.position = 'fixed';
+    picker.style.inset = '0';
+    picker.style.display = 'flex';
+    picker.style.alignItems = 'center';
+    picker.style.justifyContent = 'center';
+    picker.style.zIndex = '1000';
+    picker.style.background = 'rgba(0,0,0,0.6)';
+    const dialog = document.createElement('div');
+    dialog.style.width = 'min(420px,92vw)';
+    dialog.style.background = 'var(--modal-gradient)';
+    dialog.style.padding = '16px';
+    dialog.style.borderRadius = '12px';
+    dialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)';
+    dialog.style.textAlign = 'center';
+    dialog.innerHTML = `<div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Pick a Server</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:12px">Select a Truffled server (Server 1 / 2 / 3)</div>`;
+    const buttonsWrap = document.createElement('div');
+    buttonsWrap.style.display = 'flex';
+    buttonsWrap.style.gap = '8px';
+    buttonsWrap.style.justifyContent = 'center';
+    buttonsWrap.style.marginBottom = '12px';
+    for(let i=1;i<=3;i++){
+      const btn = document.createElement('button');
+      btn.textContent = 'Server ' + i;
+      btn.style.padding = '10px 12px';
+      btn.style.borderRadius = '10px';
+      btn.style.border = '1px solid rgba(255,255,255,0.04)';
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text)';
+      btn.style.cursor = 'pointer';
+      btn.addEventListener('click', async ()=>{
+        try{
+          btn.disabled = true;
+          showToast('Fetching server ' + i + '...');
+          const txtUrl = `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/tuffservers/server${i}.txt`;
+          const r = await fetch(txtUrl, {cache:'no-store'});
+          if(!r.ok) throw new Error('Failed to fetch server file: ' + r.status);
+          const txt = (await r.text()).trim();
+          if(!txt) throw new Error('Empty server file');
+          document.body.removeChild(picker);
+          resolve(txt.endsWith('/') ? txt : txt + '/');
+        }catch(err){
+          console.error(err);
+          showToast('Server fetch failed');
+          btn.disabled = false;
+        }
+      });
+      buttonsWrap.appendChild(btn);
+    }
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.style.marginTop = '6px';
+    cancel.style.padding = '8px 12px';
+    cancel.style.borderRadius = '10px';
+    cancel.style.border = '1px solid rgba(255,255,255,0.04)';
+    cancel.style.background = 'transparent';
+    cancel.style.color = 'var(--muted)';
+    cancel.addEventListener('click', ()=>{
+      document.body.removeChild(picker);
+      resolve(null);
+    });
+    dialog.appendChild(buttonsWrap);
+    dialog.appendChild(cancel);
+    picker.appendChild(dialog);
+    document.body.appendChild(picker);
+  });
+}
+
+function getGameListUrl(){
+  if(selectedSource === 'gn') return GN_JSON_URL;
+  if(selectedSource === 'truffled') return selectedTruffledBase ? (selectedTruffledBase + 'js/json/g.json') : '';
+  return getTacticsGameListUrl();
+}
+function getAssetCdn(){
+  if(selectedSource === 'gn') return '';
+  if(selectedSource === 'truffled') return selectedTruffledBase || '';
+  return getTacticsAssetCdn();
+}
+
+const __consoleHistory = [];
+['log','info','warn','error'].forEach(level=>{
+  const orig = console[level].bind(console);
+  console[level] = (...args)=>{
+    try{
+      const text = args.map(a => {
+        if (typeof a === 'string') return a;
+        if (a instanceof Error) return `${a.name}: ${a.message}${a.stack ? '\n' + a.stack : ''}`;
+        try { return JSON.stringify(a); } catch (e) { try { return String(a); } catch (e2) { return '[unserializable]'; } }
+      }).join(' ');
+      __consoleHistory.push({ level, text, ts: Date.now() });
+      if(__consoleHistory.length > 2000) __consoleHistory.splice(0, __consoleHistory.length - 1000);
+    }catch(e){}
+    orig(...args);
+  };
+});
+
+function getConsoleContextForMessage(msg, radius=8){
+  const idx = __consoleHistory.findIndex(entry => entry.text && String(entry.text).includes(msg));
+  if(idx === -1){ return __consoleHistory.slice(Math.max(0, __consoleHistory.length - radius), __consoleHistory.length); }
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(__consoleHistory.length, idx + radius + 1);
+  return __consoleHistory.slice(start, end).map((e,i)=>{
+    const mark = (start + i) === idx ? '>>' : '  ';
+    const time = new Date(e.ts).toLocaleTimeString();
+    return `${mark} [${time}] ${e.level.toUpperCase()}: ${e.text}`;
+  });
+}
+function formatConsoleContextList(list){
+  if(!list || !list.length) return '(no console entries captured)';
+  return list.map(l => typeof l === 'string' ? l : `${l.level.toUpperCase()}: ${l.text}`).join('\n');
+}
+
+/* ---------- Games UI ---------- */
+searchInput.addEventListener('input', debounce(e=>{
+  renderGrid(filterGames(e.target.value));
+}, 180));
+
+resetBtn.addEventListener('click', async ()=>{
+  showToast('Refreshing list...');
+  games = await loadGames();
+  renderGrid(games);
+  showToast('Refreshed from remote list');
+});
+
+closeModal.addEventListener('click', closeModalFn);
+modalBackdrop.addEventListener('click', (e)=>{ if(e.target === modalBackdrop) closeModalFn(); });
+
+playBtn.addEventListener('click', async ()=>{
+  const openInNewTabSetting = localStorage.getItem('gamesHub_openNewTab') === 'true';
+  if(openInNewTabSetting){
+    if(!currentOpen || !currentOpen.url){
+      showToast('No playable URL available');
+      return;
+    }
+    try{
+      await openPlayableInNewTab(currentOpen.url, currentOpen.name);
+      showToast('Opened in new tab');
+    }catch(e){
+      console.error('Failed to open new tab', e);
+      showToast('Unable to open new tab');
+    }
+    return;
+  }
+  if(!currentOpen || !currentOpen.url){
+    showToast('No playable URL available');
+    return;
+  }
+  showToast('Loading ' + currentOpen.name + '...');
+  try{
+    _sessionStart = Date.now();
+    _sessionGameId = currentOpen.id;
+    unloadGameList();
+    async function pickServerAndResolveUrl(rawUrl){
+      const OFFICE_BASE = 'https://office.bostoncareercounselor.com/';
+      if(selectedSource !== 'tactics' || !rawUrl || rawUrl.indexOf(OFFICE_BASE) === -1) return rawUrl;
+      return await new Promise(async (resolve)=>{
+        const picker = document.createElement('div');
+        picker.style.position = 'fixed';
+        picker.style.inset = '0';
+        picker.style.display = 'flex';
+        picker.style.alignItems = 'center';
+        picker.style.justifyContent = 'center';
+        picker.style.zIndex = '1000';
+        picker.style.background = 'rgba(0,0,0,0.6)';
+        const dialog = document.createElement('div');
+        dialog.style.width = 'min(420px,92vw)';
+        dialog.style.background = 'var(--modal-gradient)';
+        dialog.style.padding = '16px';
+        dialog.style.borderRadius = '12px';
+        dialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)';
+        dialog.style.textAlign = 'center';
+        dialog.innerHTML = `<div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Pick a Server</div><div style="color:var(--muted);font-size:13px;margin-bottom:12px">This game references an external office link; choose a server to replace the base URL before launching.</div>`;
+        const buttonsWrap = document.createElement('div');
+        buttonsWrap.style.display = 'flex';
+        buttonsWrap.style.gap = '8px';
+        buttonsWrap.style.justifyContent = 'center';
+        buttonsWrap.style.marginBottom = '12px';
+        for(let i=1;i<=3;i++){
+          const btn = document.createElement('button');
+          btn.textContent = 'Server ' + i;
+          btn.style.padding = '10px 12px';
+          btn.style.borderRadius = '10px';
+          btn.style.border = '1px solid rgba(255,255,255,0.04)';
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--text)';
+          btn.style.cursor = 'pointer';
+          btn.addEventListener('click', async ()=>{
+            try{
+              btn.disabled = true;
+              showToast('Fetching server ' + i + '...');
+              const txtUrl = `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/tuffservers/server${i}.txt`;
+              const r = await fetch(txtUrl, {cache:'no-store'});
+              if(!r.ok) throw new Error('Failed to fetch server file: ' + r.status);
+              const txt = (await r.text()).trim();
+              if(!txt) throw new Error('Empty server file');
+              const resolved = rawUrl.split(OFFICE_BASE).join(txt.endsWith('/') ? txt : txt + '/');
+              document.body.removeChild(picker);
+              resolve(resolved);
+            }catch(err){
+              console.error(err);
+              showToast('Server fetch failed');
+              btn.disabled = false;
+            }
+          });
+          buttonsWrap.appendChild(btn);
+        }
+        const cancel = document.createElement('button');
+        cancel.textContent = 'Cancel';
+        cancel.style.marginTop = '6px';
+        cancel.style.padding = '8px 12px';
+        cancel.style.borderRadius = '10px';
+        cancel.style.border = '1px solid rgba(255,255,255,0.04)';
+        cancel.style.background = 'transparent';
+        cancel.style.color = 'var(--muted)';
+        cancel.addEventListener('click', ()=>{ document.body.removeChild(picker); resolve(rawUrl); });
+        dialog.appendChild(buttonsWrap);
+        dialog.appendChild(cancel);
+        picker.appendChild(dialog);
+        document.body.appendChild(picker);
+      });
+    }
+    let finalUrl = await pickServerAndResolveUrl(currentOpen.url);
+    let fetchUrl = finalUrl;
+    if (selectedSource === 'truffled' && finalUrl) {
+      try {
+        const corsKey = '9c17ce5f';
+        fetchUrl = 'https://corsproxy.io/?key=' + encodeURIComponent(corsKey) + '&url=' + encodeURIComponent(finalUrl);
+      } catch (e) {
+        fetchUrl = finalUrl;
+      }
+    }
+    const res = await fetch(fetchUrl, {cache:'no-store'});
+    if(!res.ok) throw new Error('Failed to fetch game source: ' + res.status);
+    let html = await res.text();
+    if(selectedSource === 'tactics' && html && html.indexOf('https://office.bostoncareercounselor.com/') !== -1){
+      const replacementBase = await new Promise(async (resolve)=>{
+        const picker = document.createElement('div');
+        picker.style.position = 'fixed';
+        picker.style.inset = '0';
+        picker.style.display = 'flex';
+        picker.style.alignItems = 'center';
+        picker.style.justifyContent = 'center';
+        picker.style.zIndex = '1000';
+        picker.style.background = 'rgba(0,0,0,0.6)';
+        const dialog = document.createElement('div');
+        dialog.style.width = 'min(420px,92vw)';
+        dialog.style.background = 'var(--modal-gradient)';
+        dialog.style.padding = '16px';
+        dialog.style.borderRadius = '12px';
+        dialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)';
+        dialog.style.textAlign = 'center';
+        dialog.innerHTML = `<div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Pick a Server</div><div style="color:var(--muted);font-size:13px;margin-bottom:12px"></div>`;
+        const buttonsWrap = document.createElement('div');
+        buttonsWrap.style.display = 'flex';
+        buttonsWrap.style.gap = '8px';
+        buttonsWrap.style.justifyContent = 'center';
+        buttonsWrap.style.marginBottom = '12px';
+        for(let i=1;i<=3;i++){
+          const btn = document.createElement('button');
+          btn.textContent = 'Server ' + i;
+          btn.style.padding = '10px 12px';
+          btn.style.borderRadius = '10px';
+          btn.style.border = '1px solid rgba(255,255,255,0.04)';
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--text)';
+          btn.style.cursor = 'pointer';
+          btn.addEventListener('click', async ()=>{
+            try{
+              btn.disabled = true;
+              showToast('Fetching server ' + i + '...');
+              const txtUrl = `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/tuffservers/server${i}.txt`;
+              const r = await fetch(txtUrl, {cache:'no-store'});
+              if(!r.ok) throw new Error('Failed to fetch server file: ' + r.status);
+              const txt = (await r.text()).trim();
+              if(!txt) throw new Error('Empty server file');
+              document.body.removeChild(picker);
+              resolve(txt.endsWith('/') ? txt : txt + '/');
+            }catch(err){ console.error(err); showToast('Server fetch failed'); btn.disabled = false; }
+          });
+          buttonsWrap.appendChild(btn);
+        }
+        const cancel = document.createElement('button');
+        cancel.textContent = 'Cancel';
+        cancel.style.marginTop = '6px';
+        cancel.style.padding = '8px 12px';
+        cancel.style.borderRadius = '10px';
+        cancel.style.border = '1px solid rgba(255,255,255,0.04)';
+        cancel.style.background = 'transparent';
+        cancel.style.color = 'var(--muted)';
+        cancel.addEventListener('click', ()=>{ document.body.removeChild(picker); resolve(null); });
+        dialog.appendChild(buttonsWrap);
+        dialog.appendChild(cancel);
+        picker.appendChild(dialog);
+        document.body.appendChild(picker);
+      });
+      if(replacementBase) html = html.split('https://office.bostoncareercounselor.com/').join(replacementBase);
+    }
+    html = sanitizeHtml(html);
+    const wrap = document.getElementById('gameFrameWrap');
+    wrap.innerHTML = '';
+    const ifr = document.createElement('iframe');
+    ifr.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-modals allow-popups');
+    ifr.srcdoc = html;
+    wrap.appendChild(ifr);
+    const overlay = document.getElementById('gameOverlay');
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden','false');
+    const gt = document.getElementById('gameTopbar');
+    if(gt) gt.style.display = '';
+    try{ setupOverlayTopbar(currentOpen); }catch(e){ console.warn('setupOverlayTopbar failed', e); }
+    showToast('Game loaded — use menu to exit or fullscreen');
+  }catch(err){
+    console.error(err);
+    showToast('Failed to load game');
+    restoreGameList();
+    _sessionStart = null;
+    _sessionGameId = null;
+  }
+});
+
+document.addEventListener('click', (e)=>{
+  const dl = e.target.closest && e.target.closest('#downloadBtn');
+  if(!dl) return;
+  (async ()=>{
+    if(!currentOpen || !currentOpen.url){ showToast('No file to download'); return; }
+    showToast('Preparing download...');
+    try{
+      let downloadFetchUrl = currentOpen.url;
+      if (selectedSource === 'truffled' && currentOpen.url) {
+        try {
+          const corsKey = '9c17ce5f';
+          downloadFetchUrl = 'https://corsproxy.io/?key=' + encodeURIComponent(corsKey) + '&url=' + encodeURIComponent(currentOpen.url);
+        } catch (e) { downloadFetchUrl = currentOpen.url; }
+      }
+      const res = await fetch(downloadFetchUrl, {cache:'no-store'});
+      if(!res.ok) throw new Error('Failed to fetch HTML: ' + res.status);
+      let html = await res.text();
+      const OFFICE_BASE = 'https://office.bostoncareercounselor.com/';
+      if(selectedSource === 'tactics' && html && html.indexOf(OFFICE_BASE) !== -1){
+        const replacementBase = await new Promise(async (resolve)=>{
+          const picker = document.createElement('div');
+          picker.style.position = 'fixed'; picker.style.inset = '0'; picker.style.display = 'flex'; picker.style.alignItems = 'center'; picker.style.justifyContent = 'center'; picker.style.zIndex = '1000'; picker.style.background = 'rgba(0,0,0,0.6)';
+          const dialog = document.createElement('div');
+          dialog.style.width = 'min(420px,92vw)'; dialog.style.background = 'var(--modal-gradient)'; dialog.style.padding = '16px'; dialog.style.borderRadius = '12px'; dialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)'; dialog.style.textAlign = 'center';
+          dialog.innerHTML = `<div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Pick a Server</div><div style="color:var(--muted);font-size:13px;margin-bottom:12px">This game's HTML contains an office link; pick a server to rewrite embedded links for the downloaded file.</div>`;
+          const buttonsWrap = document.createElement('div');
+          buttonsWrap.style.display = 'flex'; buttonsWrap.style.gap = '8px'; buttonsWrap.style.justifyContent = 'center'; buttonsWrap.style.marginBottom = '12px';
+          for(let i=1;i<=3;i++){
+            const btn = document.createElement('button');
+            btn.textContent = 'Server ' + i; btn.style.padding = '10px 12px'; btn.style.borderRadius = '10px'; btn.style.border = '1px solid rgba(255,255,255,0.04)'; btn.style.background = 'transparent'; btn.style.color = 'var(--text)'; btn.style.cursor = 'pointer';
+            btn.addEventListener('click', async ()=>{
+              try{
+                btn.disabled = true;
+                const txtUrl = `https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/tuffservers/server${i}.txt`;
+                const r = await fetch(txtUrl, {cache:'no-store'});
+                if(!r.ok) throw new Error('Failed to fetch server file: ' + r.status);
+                const txt = (await r.text()).trim();
+                if(!txt) throw new Error('Empty server file');
+                document.body.removeChild(picker);
+                resolve(txt.endsWith('/') ? txt : txt + '/');
+              }catch(err){ console.error(err); showToast('Server fetch failed'); btn.disabled = false; }
+            });
+            buttonsWrap.appendChild(btn);
+          }
+          const cancel = document.createElement('button');
+          cancel.textContent = 'Skip'; cancel.style.marginTop = '6px'; cancel.style.padding = '8px 12px'; cancel.style.borderRadius = '10px'; cancel.style.border = '1px solid rgba(255,255,255,0.04)'; cancel.style.background = 'transparent'; cancel.style.color = 'var(--muted)';
+          cancel.addEventListener('click', ()=>{ document.body.removeChild(picker); resolve(null); });
+          dialog.appendChild(buttonsWrap); dialog.appendChild(cancel);
+          picker.appendChild(dialog);
+          document.body.appendChild(picker);
+        });
+        if(replacementBase) html = html.split(OFFICE_BASE).join(replacementBase);
+      }
+      html = sanitizeHtml(html);
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const safeName = (currentOpen.name || 'game').replace(/[^\w\-\. ]+/g, '').trim() || 'game';
+      const filename = safeName + '.html';
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Downloaded ' + filename);
+    }catch(err){ console.error(err); showToast('Download failed'); }
+  })();
+});
+
+/* ---------- Helpers & Rendering ---------- */
+let currentOpen = null;
+const PLAY_STATS_KEY = 'gamesHub_play_stats_v1';
+let _sessionStart = null;
+let _sessionGameId = null;
+
+function _loadPlayStats(){ try{ const raw = localStorage.getItem(PLAY_STATS_KEY); return raw ? JSON.parse(raw) : {}; }catch(e){ return {}; } }
+function _savePlayStats(obj){ try{ localStorage.setItem(PLAY_STATS_KEY, JSON.stringify(obj)); }catch(e){} }
+function addPlaySession(gameId, seconds){
+  if(!gameId) return;
+  const stats = _loadPlayStats();
+  if(!stats[gameId]) stats[gameId] = { seconds: 0, lastPlayed: null };
+  stats[gameId].seconds = (Number(stats[gameId].seconds) || 0) + Math.max(0, Math.floor(Number(seconds) || 0));
+  stats[gameId].lastPlayed = new Date().toISOString();
+  _savePlayStats(stats);
+}
+function getPlayStats(gameId){ const stats = _loadPlayStats(); return stats[gameId] || { seconds: 0, lastPlayed: null }; }
+function formatPlaytime(seconds){
+  const s = Math.max(0, Number(seconds) || 0);
+  if(s < 60) return `${s}s`;
+  const mins = Math.floor(s / 60);
+  if(mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  const remM = mins % 60;
+  return `${hours}h ${remM}m`;
+}
+function formatLastPlayed(iso){
+  if(!iso) return 'Never';
+  try{ const d = new Date(iso); return d.toLocaleString(); }catch(e){ return String(iso); }
+}
+function populatePersonalTab(game){
+  const playEl = document.getElementById('modalPlaytime');
+  const lastEl = document.getElementById('modalLastPlayed');
+  if(!game) { if(playEl) playEl.textContent = '0m'; if(lastEl) lastEl.textContent = 'Never'; return; }
+  const stats = getPlayStats(game.id);
+  if(playEl) playEl.textContent = formatPlaytime(stats.seconds);
+  if(lastEl) lastEl.textContent = formatLastPlayed(stats.lastPlayed);
+}
+
+function normalizeGame(g){
+  const sourceIsGN = selectedSource === 'gn';
+  const sourceIsTruffled = selectedSource === 'truffled';
+  if(sourceIsTruffled){
+    const id = g.name ? String(g.name).replace(/\s+/g,'_') : ('t' + Date.now());
+    const name = g.name || 'Untitled';
+    let thumbPath = String(g.thumbnail || g.thumb || '');
+    if(thumbPath && selectedTruffledBase){
+      if(thumbPath.startsWith('/')) thumbPath = thumbPath.slice(1);
+      thumbPath = selectedTruffledBase + thumbPath;
+    }
+    let rawUrl = String(g.url || '');
+    if(rawUrl && selectedTruffledBase){
+      if(rawUrl.startsWith('/')) rawUrl = rawUrl.slice(1);
+      rawUrl = selectedTruffledBase + rawUrl;
+    }
+    return { id: String(id), name: String(name), desc: String(g.description || g.desc || ''), type: String(g.frameType || g.type || 'Unknown'), year: String(g.year || ''), system: String(g.system || ''), features: String(g.features || ''), warning: String(g.warning || ''), url: rawUrl || '', thumb: thumbPath || '' };
+  }
+  if(sourceIsGN){
+    const id = (g.id !== undefined && g.id !== null) ? String(g.id) : ('g' + Date.now());
+    const name = g.name || g.title || 'Untitled';
+    let rawCover = String(g.cover || g.thumb || '');
+    rawCover = rawCover.replace(/\{COVER_URL\}/g, GN_COVER_BASE).replace(/\{HTML_URL\}/g, GN_HTML_BASE);
+    const thumb = rawCover ? (/^https?:\/\//i.test(rawCover) ? rawCover : (GN_COVER_BASE + '/' + String(rawCover))) : '';
+    let rawUrl = String(g.url || '');
+    rawUrl = rawUrl.replace(/\{HTML_URL\}/g, GN_HTML_BASE).replace(/\{COVER_URL\}/g, GN_COVER_BASE);
+    let url = rawUrl;
+    if(url && !/^https?:\/\//i.test(url)){
+      if(!url.startsWith(GN_HTML_BASE)) url = GN_HTML_BASE + (url.startsWith('/') ? '' : '/') + url;
+    }
+    return { id: String(id), name: String(name), desc: String(g.description || g.desc || ''), type: Array.isArray(g.tags) ? String((g.tags || []).join(', ')) : String(g.genre || g.type || ''), year: String(g.year || ''), system: String(g.system || ''), features: String(g.features || ''), warning: String(g.warning || ''), url: url || String(g.url || ''), thumb: thumb };
+  }
+  const id = g.id || (g._sourceFile ? String(g._sourceFile) : ('g' + Date.now()));
+  const name = g.title || g.name || 'Untitled';
+  const rawThumb = String(g.cover || g.thumb || '');
+  const thumb = rawThumb ? (/^https?:\/\//i.test(rawThumb) ? rawThumb : (getAssetCdn() + rawThumb)) : '';
+  let url = String(g.url || '').trim();
+  if(!url && g._sourceFile) url = getAssetCdn() + String(g._sourceFile);
+  else if(url && !/^https?:\/\//i.test(url)) url = getAssetCdn() + url;
+  return { id: String(id), name: String(name), desc: String(g.description || g.desc || ''), type: String(g.genre || g.type || 'Unknown'), year: String(g.year || ''), system: String(g.system || ''), features: String(g.features || ''), warning: String(g.warning || ''), url: url, thumb: thumb };
+}
+
+async function loadGames(){
+  _gamesLoading = true;
+  const loader = document.getElementById('assetsLoader');
+  const loaderBar = document.getElementById('assetsLoaderBar');
+  const loaderText = document.getElementById('assetsLoaderText');
+  function showLoader(){
+    if(loader){
+      _assetsSkip = false;
+      if(_assetsSkipTimer){ clearTimeout(_assetsSkipTimer); _assetsSkipTimer = null; }
+      _assetsSkipTimer = setTimeout(()=>{
+        const skipBtn = document.getElementById('assetsSkipBtn');
+        if(skipBtn){ skipBtn.style.display = ''; skipBtn.onclick = ()=>{ _assetsSkip = true; updateLoader(100, 'Skipped cover loading'); hideLoader(); }; }
+      }, 5000);
+      loader.style.display = 'flex'; loader.setAttribute('aria-hidden','false'); loaderBar.style.width = '0%'; loaderText.textContent = 'Preparing...';
+      document.body.classList.add('loading-blur');
+      const skipBtnInit = document.getElementById('assetsSkipBtn');
+      if(skipBtnInit) skipBtnInit.style.display = 'none';
+    }
+  }
+  function hideLoader(){
+    try{ if(_assetsSkipTimer){ clearTimeout(_assetsSkipTimer); _assetsSkipTimer = null; } }catch(e){}
+    if(loader){
+      loader.classList.add('finished');
+      setTimeout(()=> { loader.style.display = 'none'; loader.setAttribute('aria-hidden','true'); loader.classList.remove('finished'); document.body.classList.remove('loading-blur'); const skipBtn = document.getElementById('assetsSkipBtn'); if(skipBtn) skipBtn.style.display = 'none'; }, 180);
+    }
+  }
+  function updateLoader(progressPercent, assetText){
+    if(loaderBar) loaderBar.style.width = Math.max(0, Math.min(100, progressPercent)) + '%';
+    if(loaderText) loaderText.textContent = assetText || '';
+  }
+  const loadErrorEl = document.getElementById('loadError');
+  function showLoadError(msg){
+    if(loadErrorEl){
+      loadErrorEl.style.display = '';
+      const textEl = document.getElementById('loadErrorText');
+      const detailsEl = document.getElementById('loadErrorDetails');
+      const detailsWrap = document.getElementById('loadErrorDetailsWrap');
+      const toggleBtn = document.getElementById('loadErrorToggle');
+      if(textEl) textEl.textContent = msg;
+      if(detailsEl){ const context = getConsoleContextForMessage(msg, 12); detailsEl.textContent = formatConsoleContextList(context); }
+      if(detailsWrap) detailsWrap.style.display = 'none';
+      if(toggleBtn){
+        toggleBtn.setAttribute('aria-expanded','false');
+        toggleBtn.onclick = ()=>{
+          const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+          toggleBtn.setAttribute('aria-expanded', String(!expanded));
+          if(detailsWrap) detailsWrap.style.display = expanded ? 'none' : '';
+        };
+      }
+    } else { console.error('Load error:', msg); }
+  }
+  function clearLoadError(){
+    if(loadErrorEl){ loadErrorEl.style.display = 'none'; const textEl = document.getElementById('loadErrorText'); const detailsEl = document.getElementById('loadErrorDetails'); if(textEl) textEl.textContent = ''; if(detailsEl) detailsEl.textContent = ''; }
+  }
+  showLoader();
+  try{
+    if(selectedSource === 'truffled'){
+      if(!selectedTruffledBase){
+        const picked = await pickTruffledServer();
+        if(!picked){ showLoadError('Truffled server selection canceled by user'); _gamesLoading = false; hideLoader(); return []; }
+        selectedTruffledBase = picked;
+        GAME_LIST_URL = getGameListUrl();
+      }
+    }
+    updateLoader(4, 'Fetching game list...');
+    const fetchOpts = { cache: 'no-store' };
+    if(selectedSource === 'truffled'){ fetchOpts.referrerPolicy = 'strict-origin-when-cross-origin'; fetchOpts.mode = 'cors'; }
+    let listFetchUrl = GAME_LIST_URL;
+    if(selectedSource === 'truffled' && GAME_LIST_URL){
+      try{ const corsKey = '9c17ce5f'; listFetchUrl = 'https://corsproxy.io/?key=' + encodeURIComponent(corsKey) + '&url=' + encodeURIComponent(GAME_LIST_URL); }catch(e){ listFetchUrl = GAME_LIST_URL; }
+    }
+    const res = await fetch(listFetchUrl, fetchOpts);
+    if(!res.ok) throw new Error('Failed to fetch game list (status ' + res.status + ')');
+    const text = await res.text();
+    try{
+      const parsed = JSON.parse(text);
+      if(parsed && typeof parsed === 'object'){
+        clearLoadError();
+        let normalized;
+        if(selectedSource === 'truffled' && Array.isArray(parsed.games)) normalized = parsed.games.map(item => normalizeGame(item));
+        else if(selectedSource === 'gn' && Array.isArray(parsed)) normalized = parsed.map(item => normalizeGame(item));
+        else normalized = Object.entries(parsed).map(([key, meta]) => normalizeGame({ _sourceFile: key, ...meta }));
+        try{ renderGrid(normalized); updateCount(normalized.length); }catch(e){ console.warn('Immediate render failed', e); }
+        const thumbs = normalized.map(g=> g.thumb).filter(Boolean);
+        let _coversLoaded = 0;
+        const _totalCovers = thumbs.length;
+        const BATCH_SIZE = 20;
+        async function _loadOneCover(url){
+          if(_assetsSkip) return;
+          await new Promise((resolve)=> {
+            const img = new Image();
+            const t = setTimeout(()=> resolve(), 7000);
+            img.onload = ()=> { clearTimeout(t); resolve(); };
+            img.onerror = ()=> { clearTimeout(t); resolve(); };
+            try{ img.src = url; }catch(e){ clearTimeout(t); resolve(); }
+          });
+          _coversLoaded++;
+          const pct = Math.round(4 + (_coversLoaded / Math.max(1, _totalCovers)) * 96);
+          const fileName = (typeof url === 'string' && url.length) ? url.split('/').pop() : url;
+          updateLoader(pct, `Loading cover ${_coversLoaded} of ${_totalCovers}: ${fileName}`);
+        }
+        for(let batchStart=0; batchStart<thumbs.length && !_assetsSkip; batchStart+=BATCH_SIZE){
+          const batch = thumbs.slice(batchStart, batchStart + BATCH_SIZE);
+          await Promise.all(batch.map(url => _loadOneCover(url)));
+        }
+        updateLoader(100, _assetsSkip ? 'Skipped cover loading' : 'Complete');
+        await new Promise(r=> setTimeout(r, 220));
+        _gamesLoading = false; hideLoader();
+        return normalized;
+      }
+    }catch(jsonErr){
+      let posMatch = String(jsonErr.message || '').match(/position\s+(\d+)|at position\s+(\d+)/i);
+      if(!posMatch) posMatch = String(jsonErr.message || '').match(/at\s+(\d+)\s*$/);
+      if(posMatch){ const pos = Number(posMatch[1] || posMatch[2]); if(!Number.isNaN(pos) && pos >= 0){ const prefix = text.slice(0, pos); const line = prefix.split(/\r?\n/).length; showLoadError(`Error parsing JSON at position ${pos} (approx. line ${line}): ${jsonErr.message}`); }else{ showLoadError('Error parsing JSON: ' + jsonErr.message); } }else{ showLoadError('Error parsing JSON: ' + jsonErr.message); }
+      try{
+        let cleaned = text.replace(/,\s*([}\]])/g, '$1').replace(/\r\n|\n|\t/g, ' ').trim();
+        try{ cleaned = cleaned.replace(/(["'`][^"'`]*["'`]\s*)(?=\s*[A-Za-z0-9_\-$]+\s*:)/g, '$1, '); }catch(e){}
+        try{ if(/^[\[\{]\s*/.test(cleaned)) cleaned = cleaned.replace(/([{,]\s*)([A-Za-z0-9_\-$]+)\s*:/g, (m, lead, key) => { if(/^["'].*["']$/.test(key)) return m; return lead + '"' + key + '":'; }); }catch(qe){}
+        if(!/^\(/.test(cleaned)) cleaned = '(' + cleaned + ')';
+        const parsed = (new Function('return ' + cleaned))();
+        if(parsed && typeof parsed === 'object'){
+          clearLoadError();
+          let normalized;
+          if(selectedSource === 'truffled' && Array.isArray(parsed.games)) normalized = parsed.games.map(item => normalizeGame(item));
+          else normalized = Object.entries(parsed).map(([key, meta]) => normalizeGame({ _sourceFile: key, ...meta }));
+          try{ renderGrid(normalized); updateCount(normalized.length); }catch(e){ console.warn('Immediate render failed', e); }
+          const thumbs = normalized.map(g=> g.thumb).filter(Boolean);
+          let _coversLoaded = 0;
+          const _totalCovers = thumbs.length;
+          const BATCH_SIZE = 20;
+          async function _loadOneCover(url){
+            if(_assetsSkip) return;
+            await new Promise((resolve)=> {
+              const img = new Image();
+              const t = setTimeout(()=> resolve(), 7000);
+              img.onload = ()=> { clearTimeout(t); resolve(); };
+              img.onerror = ()=> { clearTimeout(t); resolve(); };
+              try{ img.src = url; }catch(e){ clearTimeout(t); resolve(); }
+            });
+            _coversLoaded++;
+            const pct = Math.round(4 + (_coversLoaded / Math.max(1, _totalCovers)) * 96);
+            const fileName = (typeof url === 'string' && url.length) ? url.split('/').pop() : url;
+            updateLoader(pct, `Loading cover ${_coversLoaded} of ${_totalCovers}: ${fileName}`);
+          }
+          for(let batchStart=0; batchStart<thumbs.length && !_assetsSkip; batchStart+=BATCH_SIZE){
+            const batch = thumbs.slice(batchStart, batchStart + BATCH_SIZE);
+            await Promise.all(batch.map(url => _loadOneCover(url)));
+          }
+          updateLoader(100, 'Complete');
+          await new Promise(r=> setTimeout(r, 220));
+          _gamesLoading = false; hideLoader();
+          return normalized;
+        }
+      }catch(evalErr){ showLoadError('Tolerant parse failed: ' + (evalErr && evalErr.message ? evalErr.message : evalErr)); }
+    }
+    throw new Error('Parsed data is not an object');
+  }catch(e){
+    console.error('Load failed', e);
+    try{ _gamesLoading = false; hideLoader(); }catch(_){}
+    try{ showLoadError('Failed to load game list: ' + (e && e.message ? e.message : String(e))); }catch(ex){ console.error(ex); }
+    return [];
+  }
+}
+
+function renderGrid(list){
+  grid.innerHTML = '';
+  for(const g of list){
+    const card = document.createElement('button');
+    card.className = 'card';
+    card.type = 'button';
+    card.setAttribute('role','listitem');
+    card.addEventListener('click', ()=> openModal(g));
+    card.innerHTML = `<div class="thumb" aria-hidden="true">${g.thumb ? `<img src="${escapeHtml(g.thumb)}" alt="">` : ''}</div><div class="meta"><div class="name">${escapeHtml(g.name)}</div></div>`;
+    grid.appendChild(card);
+  }
+  updateCount(list.length);
+}
+
+function updateCount(n){
+  const total = n === undefined ? games.length : n;
+  countEl.textContent = total + (total===1 ? ' game' : ' games');
+}
+
+function filterGames(q){
+  if(!q) return games;
+  const s = q.trim().toLowerCase();
+  return games.filter(g=> g.name.toLowerCase().includes(s) || g.desc.toLowerCase().includes(s) || (g.type && g.type.toLowerCase().includes(s)));
+}
+
+function openModal(game){
+  currentOpen = game;
+  modalThumb.innerHTML = game.thumb ? `<img src="${escapeHtml(game.thumb)}" style="width:100%;height:100%;object-fit:cover" alt="">` : '';
+  modalName.textContent = game.name;
+  modalType.textContent = game.type;
+  modalDesc.textContent = game.desc || '';
+  const featuresEl = document.getElementById('modalFeatures');
+  featuresEl.textContent = game.features || 'No additional features listed.';
+  const warnEl = document.getElementById('modalWarning');
+  if(game.warning && String(game.warning).trim()){
+    warnEl.textContent = `"${game.warning}"`;
+    warnEl.style.display = '';
+  }else{ warnEl.style.display = 'none'; warnEl.textContent = ''; }
+  populatePersonalTab(game);
+  setActiveTab('description');
+  (function manageDeltaruneChapterButton(){
+    const actions = document.querySelector('.modal-actions');
+    if(!actions) return;
+    const existing = document.getElementById('playDCH5');
+    if(existing) existing.remove();
+    try{
+      const nameLower = String(game.name || '').toLowerCase();
+      if(nameLower.includes('deltarune')){
+        const downloadBtn = document.getElementById('downloadBtn');
+        const btn = document.createElement('button');
+        btn.id = 'playDCH5'; btn.title = 'Play Deltarune — Chapter 5'; btn.className = 'launch';
+        btn.style.background = 'linear-gradient(90deg,#8b5cf6,#7c3aed)'; btn.style.color = '#fff'; btn.textContent = 'Play Chapter 5';
+        btn.addEventListener('click', async (ev)=>{
+          ev.stopPropagation();
+          let resolved = '';
+          try{
+            if(game && game.url){
+              try{ const u = new URL(game.url); const base = u.origin + u.pathname.replace(/\/[^\/]*$/, '/'); resolved = base + 'DCH5.html'; }catch(e){ resolved = getAssetCdn() + 'DCH5.html'; }
+            }else{ resolved = getAssetCdn() + 'DCH5.html'; }
+          }catch(e){ resolved = getAssetCdn() + 'DCH5.html'; }
+          const prevUrl = currentOpen && currentOpen.url ? currentOpen.url : null;
+          currentOpen = Object.assign({}, currentOpen, { url: resolved });
+          document.getElementById('playBtn').click();
+          if(currentOpen) currentOpen.url = prevUrl;
+        });
+        if(downloadBtn) actions.insertBefore(btn, downloadBtn); else actions.appendChild(btn);
+      }
+    }catch(e){ console.warn('Failed to manage Deltarune Chapter button', e); }
+  })();
+  modalBackdrop.classList.add('show');
+  modalBackdrop.setAttribute('aria-hidden','false');
+  setTimeout(()=> closeModal.focus?.(), 250);
+}
+
+function setActiveTab(tab){
+  const descBtn = document.getElementById('tabDesc');
+  const featBtn = document.getElementById('tabFeat');
+  const personalBtn = document.getElementById('tabPersonal');
+  const descContent = document.getElementById('tabContentDescription');
+  const featContent = document.getElementById('tabContentFeatures');
+  const personalContent = document.getElementById('tabContentPersonal');
+  if(!descContent || !featContent) return;
+  function showContent(showEl, hideEls){
+    [descContent, featContent, personalContent].forEach(el=> el && el.classList.remove('visible'));
+    [descContent, featContent, personalContent].forEach(el=> { if(el) el.style.display = ''; });
+    setTimeout(()=>{ if(showEl) showEl.classList.add('visible'); (hideEls || []).forEach(h=> h && h.classList.remove('visible')); }, 30);
+  }
+  if(tab === 'features'){
+    descBtn.classList.remove('active'); featBtn.classList.add('active'); personalBtn?.classList.remove('active');
+    showContent(featContent, [descContent, personalContent]);
+  }else if(tab === 'personal'){
+    descBtn.classList.remove('active'); featBtn.classList.remove('active'); personalBtn?.classList.add('active');
+    populatePersonalTab(currentOpen);
+    showContent(personalContent, [descContent, featContent]);
+  }else{
+    descBtn.classList.add('active'); featBtn.classList.remove('active'); personalBtn?.classList.remove('active');
+    showContent(descContent, [featContent, personalContent]);
+  }
+}
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest && e.target.closest('.tab-btn');
+  if(!btn) return;
+  const tab = btn.getAttribute('data-tab');
+  if(tab) setActiveTab(tab);
+});
+
+function closeModalFn(){
+  currentOpen = null;
+  modalBackdrop.classList.remove('show');
+  modalBackdrop.setAttribute('aria-hidden','true');
+}
+
+let toastTimer = null;
+function showToast(text, ms=1800){
+  clearTimeout(toastTimer);
+  toast.textContent = text;
+  toast.classList.add('visible');
+  toastTimer = setTimeout(()=> toast.classList.remove('visible'), ms);
+}
+
+// Game overlay controls
+const overlay = document.getElementById('gameOverlay');
+const overlayMenuBtn = document.getElementById('overlayMenuBtn');
+const overlayMenu = document.getElementById('overlayMenu');
+const overlayExitBtn = document.getElementById('overlayExitBtn');
+const overlayRefreshBtn = document.getElementById('overlayRefreshBtn');
+const overlayFullscreenBtn = document.getElementById('overlayFullscreenBtn');
+const gameMenuBtn = document.getElementById('gameMenuBtn');
+const gameMenu = document.getElementById('gameMenu');
+const exitGameBtn = document.getElementById('exitGameBtn');
+const refreshIframeBtn = document.getElementById('refreshIframeBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const overlayOpenNewTab = document.getElementById('overlayOpenNewTab');
+const openGameNewTab = document.getElementById('openGameNewTab');
+
+function closeInjectedGame(){
+  try{ if(_sessionStart && _sessionGameId){ const seconds = Math.floor((Date.now() - _sessionStart) / 1000); if(seconds > 0) addPlaySession(_sessionGameId, seconds); } }catch(e){}
+  _sessionStart = null; _sessionGameId = null;
+  const wrap = document.getElementById('gameFrameWrap'); if(wrap) wrap.innerHTML = '';
+  overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true');
+  const gt = document.getElementById('gameTopbar'); if(gt) gt.style.display = 'none';
+  if(document.fullscreenElement) document.exitFullscreen?.();
+  restoreGameList();
+  showToast('Exited game');
+}
+
+function toggleMenu(menu){
+  if(!menu) return;
+  const show = !menu.classList.contains('show');
+  document.querySelectorAll('.menu.show').forEach(m=>{ if(m!==menu) m.classList.remove('show'); });
+  if(show) menu.classList.add('show'); else menu.classList.remove('show');
+}
+
+overlayMenuBtn?.addEventListener('click', ()=> toggleMenu(overlayMenu));
+overlayExitBtn?.addEventListener('click', ()=> { toggleMenu(overlayMenu); closeInjectedGame(); });
+overlayOpenNewTab?.addEventListener('click', async ()=> {
+  toggleMenu(overlayMenu);
+  if(!currentOpen || !currentOpen.url){ showToast('No playable URL available'); return; }
+  try{ await openPlayableInNewTab(currentOpen.url, currentOpen.name); showToast('Opened in new tab'); }catch(e){ showToast('Unable to open new tab'); }
+});
+overlayFullscreenBtn?.addEventListener('click', async ()=> {
+  toggleMenu(overlayMenu);
+  const wrap = document.getElementById('gameFrameWrap');
+  const el = wrap.querySelector('iframe') || wrap;
+  if(el.requestFullscreen) await el.requestFullscreen();
+  showToast('Entering fullscreen');
+});
+overlayRefreshBtn?.addEventListener('click', ()=> {
+  toggleMenu(overlayMenu);
+  const wrap = document.getElementById('gameFrameWrap');
+  const ifr = wrap.querySelector('iframe');
+  if(ifr){
+    if(ifr.srcdoc !== undefined){ const src = ifr.srcdoc; ifr.srcdoc = src; }
+    else if(ifr.contentWindow){ try{ ifr.contentWindow.location.reload(); }catch(e){} }
+    showToast('Iframe refreshed');
+  }else{ showToast('No iframe to refresh'); }
+});
+
+gameMenuBtn?.addEventListener('click', ()=> toggleMenu(gameMenu));
+exitGameBtn?.addEventListener('click', ()=> { toggleMenu(gameMenu); closeInjectedGame(); });
+openGameNewTab?.addEventListener('click', async ()=> {
+  toggleMenu(gameMenu);
+  if(!currentOpen || !currentOpen.url){ showToast('No playable URL available'); return; }
+  try{ await openPlayableInNewTab(currentOpen.url, currentOpen.name); showToast('Opened in new tab'); }catch(e){ showToast('Unable to open new tab'); }
+});
+refreshIframeBtn?.addEventListener('click', ()=> {
+  toggleMenu(gameMenu);
+  const wrap = document.getElementById('gameFrameWrap');
+  const ifr = wrap.querySelector('iframe');
+  if(ifr){
+    if(ifr.srcdoc !== undefined){ const src = ifr.srcdoc; ifr.srcdoc = src; }
+    else if(ifr.contentWindow){ try{ ifr.contentWindow.location.reload(); }catch(e){} }
+    showToast('Iframe refreshed');
+  }else{ showToast('No iframe to refresh'); }
+});
+fullscreenBtn?.addEventListener('click', async ()=> {
+  toggleMenu(gameMenu);
+  const wrap = document.getElementById('gameFrameWrap');
+  const el = wrap.querySelector('iframe') || wrap;
+  if(el.requestFullscreen) await el.requestFullscreen();
+  showToast('Entering fullscreen');
+});
+
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest) return;
+  if(!e.target.closest('.game-controls') && !e.target.closest('#overlayMenu') && !e.target.closest('#gameMenu')){
+    document.querySelectorAll('.menu.show').forEach(m=>m.classList.remove('show'));
+  }
+});
+
+function setupOverlayTopbar(game){
+  const favImg = document.getElementById('chromeFaviconImg');
+  const favWrap = document.getElementById('chromeFavicon');
+  const titleEl = document.getElementById('chromeTitle');
+  const backBtn = document.getElementById('iframeBack');
+  const fwdBtn = document.getElementById('iframeForward');
+  const refBtn = document.getElementById('iframeRefresh');
+  titleEl.textContent = game && game.name ? game.name : 'Game';
+  const candidate = (game && game.url) ? (function(){
+    try{ const u = new URL(game.url); return u.origin + '/favicon.ico'; }catch(e){ return null; }
+  })() : null;
+  let favSrcCandidate = candidate || '';
+  try{
+    const IGNORE_FAV = 'https://cdn.jsdelivr.net/favicon.ico';
+    if(favSrcCandidate && favSrcCandidate.trim() === IGNORE_FAV) favSrcCandidate = '';
+    if(favSrcCandidate && favSrcCandidate.indexOf('cdn.jsdelivr.net/favicon.ico') !== -1) favSrcCandidate = '';
+  }catch(e){ favSrcCandidate = favSrcCandidate || ''; }
+  const favSrc = favSrcCandidate || game.thumb || '';
+  if(favSrc){ favImg.src = favSrc; favImg.style.display = ''; }else{ favImg.style.display = 'none'; }
+  function getIframeWindow(){ const wrap = document.getElementById('gameFrameWrap'); if(!wrap) return null; const ifr = wrap.querySelector('iframe'); return ifr ? ifr.contentWindow : null; }
+  async function updateNavState(){
+    const win = getIframeWindow();
+    try{ if(!win) { backBtn.disabled = true; fwdBtn.disabled = true; return; }
+      const hasBack = (win.history && win.history.length > 1); backBtn.disabled = !hasBack; fwdBtn.disabled = false;
+    }catch(e){ backBtn.disabled = true; fwdBtn.disabled = true; }
+  }
+  backBtn.onclick = ()=>{ const win = getIframeWindow(); try{ if(win && win.history) win.history.back(); }catch(e){} setTimeout(updateNavState, 250); };
+  fwdBtn.onclick = ()=>{ const win = getIframeWindow(); try{ if(win && win.history) win.history.forward(); }catch(e){} setTimeout(updateNavState, 250); };
+  refBtn.onclick = ()=>{
+    const wrap = document.getElementById('gameFrameWrap');
+    const ifr = wrap.querySelector('iframe');
+    if(ifr){
+      try{ if(ifr.srcdoc !== undefined && ifr.srcdoc){ const src = ifr.srcdoc; ifr.srcdoc = src; }else{ ifr.contentWindow && ifr.contentWindow.location.reload(); } }catch(e){ try{ if(ifr.src) { ifr.src = ifr.src; } }catch(_) {} }
+    }
+    setTimeout(updateNavState, 250);
+  };
+  updateNavState();
+  const poll = setInterval(updateNavState, 800);
+  setTimeout(()=> clearInterval(poll), 6000);
+}
+
+function debounce(fn, wait=120){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); }; }
+function escapeHtml(s){
+  return String(s || '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;");
+}
+
+function sanitizeHtml(html){
+  if(!html) return html;
+  try{
+    html = html.replace(/<a[^>]*href=["']https?:\/\/office\.bostoncareercounselor\.com[^"']*["'][^>]*>[\s\S]*?<img[^>]*id=["']truffled-logo["'][\s\S]*?>[\s\S]*?<\/a>/gi, '');
+    try{ if(typeof selectedSource !== 'undefined' && selectedSource === 'tactics') html = html.replace(/https?:\/\/cdn\.jsdelivr\.net\/gh\/gn-math\/assets(@[^\/]+)?\/([^"'>\s]+)/gi, function(_, ver, rest){ return 'https://cdn.jsdelivr.net/gh/freebuisness/assets' + (ver || '') + '/' + rest; }); }catch(e){}
+    return html;
+  }catch(e){ return html; }
+}
+
+async function openPlayableInNewTab(rawUrl, title){
+  if(!rawUrl) throw new Error('No URL provided');
+  try{
+    let fetchUrl = rawUrl;
+    if(selectedSource === 'truffled' && rawUrl){
+      try{ const corsKey = '9c17ce5f'; fetchUrl = 'https://corsproxy.io/?key=' + encodeURIComponent(corsKey) + '&url=' + encodeURIComponent(rawUrl); }catch(e){ fetchUrl = rawUrl; }
+    }
+    const res = await fetch(fetchUrl, { cache: 'no-store', referrerPolicy: (selectedSource === 'truffled' ? 'strict-origin-when-cross-origin' : undefined) });
+    if(!res.ok) throw new Error('Fetch failed: ' + res.status);
+    let html = await res.text();
+    html = sanitizeHtml(html);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank', 'noopener');
+    if(!win) throw new Error('Popup blocked');
+    try{ win.document.title = title || 'Game'; }catch(e){}
+    setTimeout(()=> { try{ URL.revokeObjectURL(url); }catch(e){} }, 15000);
+    return true;
+  }catch(err){
+    console.warn('openPlayableInNewTab failed, falling back to direct open', err);
+    try{ window.open(rawUrl, '_blank', 'noopener'); return true; }catch(e){ throw err; }
+  }
+}
+
+let _gridBackup = null;
+function unloadGameList(){
+  try{
+    if(!_gridBackup){
+      _gridBackup = { html: grid.innerHTML, scrollTop: grid.scrollTop || 0 };
+      const imgs = grid.querySelectorAll('img'); imgs.forEach(img=>{ try{ img.src = ''; }catch(e){} });
+      grid.innerHTML = ''; grid.style.display = 'none';
+    }
+  }catch(e){ console.warn('unloadGameList failed', e); }
+}
+function restoreGameList(){
+  try{
+    if(_gridBackup){
+      grid.style.display = '';
+      if(games.length > 0) renderGrid(games);
+      else if(_gridBackup.html) grid.innerHTML = _gridBackup.html;
+      setTimeout(()=> { try{ grid.scrollTop = _gridBackup.scrollTop || 0; }catch(e){} }, 20);
+      _gridBackup = null;
+    }
+  }catch(e){ console.warn('restoreGameList failed', e); }
+}
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    if(modalBackdrop.classList.contains('show')) closeModalFn();
+    if(movieDetailModal.classList.contains('show')) closeMovieModal();
+  }
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); searchInput.focus(); }
+});
+
+document.addEventListener('touchmove', function(e){ if(!modalBackdrop.classList.contains('show')) e.preventDefault(); }, { passive:false });
+
+searchInput.focus();
+
+/* Settings & Ordering / Theme */
+orderSelect.addEventListener('change', ()=>{ applyOrdering(orderSelect.value); });
+
+function applyOrdering(mode){
+  let list = Array.from(games);
+  if(mode === 'name') list.sort((a,b)=> a.name.localeCompare(b.name));
+  else if(mode === 'year') list.sort((a,b)=> { const ay = parseInt(a.year||'0')||0; const by = parseInt(b.year||'0')||0; return by - ay; });
+  else list = Array.from(games);
+  renderGrid(list);
+}
+
+themeSelect.addEventListener('change', ()=>{ applyTheme(themeSelect.value); });
+
+const branchSelect = document.getElementById('branchSelect');
+if(branchSelect){
+  branchSelect.value = selectedBranch;
+  branchSelect.addEventListener('change', async ()=>{
+    selectedBranch = branchSelect.value || 'main';
+    sessionStorage.setItem('gamesHub_branch', selectedBranch);
+    GAME_LIST_URL = getGameListUrl();
+    showToast('Switching branch to ' + selectedBranch + ' and reloading...');
+    games = await loadGames();
+    renderGrid(games);
+    showToast('Reloaded list from branch: ' + selectedBranch);
+  });
+}
+
+const sourceSelect = document.getElementById('sourceSelect');
+if(sourceSelect){
+  sourceSelect.value = selectedSource;
+  sourceSelect.addEventListener('change', async ()=>{
+    selectedSource = sourceSelect.value || 'tactics';
+    GAME_LIST_URL = getGameListUrl();
+    showToast('Switching source to ' + (selectedSource === 'gn' ? 'GN-Math' : 'TACTICS') + ' and reloading...');
+    games = await loadGames();
+    renderGrid(games);
+    showToast('Reloaded list from source: ' + (selectedSource === 'gn' ? 'GN-Math' : 'TACTICS'));
+  });
+}
+
+customColor.addEventListener('input', ()=>{
+  document.documentElement.style.setProperty('--accent', customColor.value);
+  document.documentElement.style.setProperty('--accent-2', customColor.value);
+});
+
+function applyEntrySize(valuePercent){
+  const pct = Math.max(1, Math.min(200, Number(valuePercent) || 100));
+  const scale = pct / 100;
+  document.documentElement.style.setProperty('--card-scale', String(scale));
+  if(entrySizeLabel) entrySizeLabel.textContent = pct + '%';
+}
+if(entrySize) entrySize.addEventListener('input', (e)=>{ applyEntrySize(e.target.value); });
+
+function applyMovieEntrySize(valuePercent){
+  const pct = Math.max(1, Math.min(200, Number(valuePercent) || 100));
+  const scale = pct / 100;
+  document.documentElement.style.setProperty('--movie-card-scale', String(scale));
+  if(movieEntrySizeLabel) movieEntrySizeLabel.textContent = pct + '%';
+}
+if(movieEntrySize) movieEntrySize.addEventListener('input', (e)=>{ applyMovieEntrySize(e.target.value); });
+
+/* More Details Style */
+function applyMoreDetailsStyle(){
+  const style = moreDetailsStyle ? moreDetailsStyle.value : 'popup';
+  if(moreDetailsPopupSizeWrap) moreDetailsPopupSizeWrap.style.display = style === 'popup' ? 'flex' : 'none';
+  const movieModalEl = document.querySelector('.movie-modal');
+  if(movieModalEl){
+    movieModalEl.classList.toggle('full-page', style === 'fullpage');
+    movieModalEl.classList.toggle('popup-size-adjusted', style === 'popup');
+  }
+  if(style === 'popup'){
+    const pct = Math.max(50, Math.min(100, Number(moreDetailsPopupSize ? moreDetailsPopupSize.value : 50) || 50));
+    const mult = pct / 50;
+    document.documentElement.style.setProperty('--popup-size-mult', String(mult));
+  }
+}
+function applyMoreDetailsPopupSize(){
+  const pct = Math.max(50, Math.min(100, Number(moreDetailsPopupSize ? moreDetailsPopupSize.value : 50) || 50));
+  if(moreDetailsPopupSizeLabel) moreDetailsPopupSizeLabel.textContent = pct + '%';
+  const mult = pct / 50;
+  document.documentElement.style.setProperty('--popup-size-mult', String(mult));
+}
+if(moreDetailsStyle) moreDetailsStyle.addEventListener('change', applyMoreDetailsStyle);
+if(moreDetailsPopupSize) moreDetailsPopupSize.addEventListener('input', applyMoreDetailsPopupSize);
+
+function applyTheme(name){
+  document.documentElement.classList.remove('theme-light','theme-dark','theme-base');
+  if(name === 'light'){
+    document.documentElement.style.setProperty('--bg-top', '#f6f7fb'); document.documentElement.style.setProperty('--bg-bottom', '#eef2f7');
+    document.documentElement.style.setProperty('--modal-top', '#ffffff'); document.documentElement.style.setProperty('--modal-bottom', '#f8fafc');
+    document.documentElement.style.setProperty('--card-top', 'rgba(0,0,0,0.03)'); document.documentElement.style.setProperty('--card-bottom', 'rgba(0,0,0,0.02)');
+    document.documentElement.style.setProperty('--glass', 'rgba(0,0,0,0.03)'); document.documentElement.style.setProperty('--accent', '#0ea5b8'); document.documentElement.style.setProperty('--accent-2', '#0891b2');
+    document.documentElement.style.setProperty('--muted', '#6b7280'); document.documentElement.style.setProperty('--text', '#08202a'); document.documentElement.style.setProperty('--logo-text', '#042027');
+    document.documentElement.style.setProperty('--topbar-top', 'rgba(255,255,255,0.9)'); document.documentElement.style.setProperty('--topbar-bottom', 'rgba(250,250,250,0.9)');
+    document.documentElement.style.setProperty('--topbar-gradient', 'linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom))');
+    document.documentElement.style.setProperty('--footer-top', 'rgba(255,255,255,0.9)'); document.documentElement.style.setProperty('--footer-bottom', 'rgba(250,250,250,0.9)');
+    document.documentElement.style.setProperty('--footer-gradient', 'linear-gradient(180deg,var(--footer-top),var(--footer-bottom))');
+    document.documentElement.style.setProperty('--iframe-topbar-top', 'rgba(240,240,240,0.9)'); document.documentElement.style.setProperty('--iframe-topbar-bottom', 'rgba(235,235,235,0.9)');
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', 'linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom))');
+    document.documentElement.style.setProperty('--search-bg', 'rgba(255,255,255,0.06)'); document.documentElement.style.setProperty('color-scheme','light');
+    customColor.style.display = 'none';
+  }else if(name === 'dark'){
+    document.documentElement.style.setProperty('--bg-top', '#000000'); document.documentElement.style.setProperty('--bg-bottom', '#000000');
+    document.documentElement.style.setProperty('--modal-top', '#0b0b0b'); document.documentElement.style.setProperty('--modal-bottom', '#050505');
+    document.documentElement.style.setProperty('--card-top', 'rgba(255,255,255,0.02)'); document.documentElement.style.setProperty('--card-bottom', 'rgba(255,255,255,0.01)');
+    document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.03)'); document.documentElement.style.setProperty('--accent', '#06b6d4'); document.documentElement.style.setProperty('--accent-2', '#00aeb0');
+    document.documentElement.style.setProperty('--muted', '#98a0ad'); document.documentElement.style.setProperty('--text', '#e6eef6');
+    document.documentElement.style.setProperty('--topbar-top', 'rgba(7,16,26,0.36)'); document.documentElement.style.setProperty('--topbar-bottom', 'rgba(12,23,34,0.28)');
+    document.documentElement.style.setProperty('--topbar-gradient', 'linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom))');
+    document.documentElement.style.setProperty('--footer-top', 'rgba(7,16,26,0.30)'); document.documentElement.style.setProperty('--footer-bottom', 'rgba(12,23,34,0.22)');
+    document.documentElement.style.setProperty('--footer-gradient', 'linear-gradient(180deg,var(--footer-top),var(--footer-bottom))');
+    document.documentElement.style.setProperty('--iframe-topbar-top', 'rgba(0,0,0,0.18)'); document.documentElement.style.setProperty('--iframe-topbar-bottom', 'rgba(0,0,0,0.10)');
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', 'linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom))');
+    document.documentElement.style.setProperty('--search-bg', 'var(--glass)'); document.documentElement.style.setProperty('color-scheme','dark');
+    customColor.style.display = 'none';
+  }else if(name === 'gn-math'){
+    document.documentElement.style.setProperty('--topbar-top', '#f92550'); document.documentElement.style.setProperty('--topbar-bottom', '#f92550');
+    document.documentElement.style.setProperty('--topbar-gradient', 'linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom))');
+    document.documentElement.style.setProperty('--bg-top', '#0f172a'); document.documentElement.style.setProperty('--bg-bottom', '#0f172a');
+    document.documentElement.style.setProperty('--bg-gradient', 'linear-gradient(180deg,var(--bg-top),var(--bg-bottom))');
+    document.documentElement.style.setProperty('--footer-top', '#1e293b'); document.documentElement.style.setProperty('--footer-bottom', '#1e293b');
+    document.documentElement.style.setProperty('--footer-gradient', 'linear-gradient(180deg,var(--footer-top),var(--footer-bottom))');
+    document.documentElement.style.setProperty('--iframe-topbar-top', '#fa2550'); document.documentElement.style.setProperty('--iframe-topbar-bottom', '#fa2550');
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', 'linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom))');
+    document.documentElement.style.setProperty('--modal-top', '#0f172a'); document.documentElement.style.setProperty('--modal-bottom', '#0f172a');
+    document.documentElement.style.setProperty('--modal-gradient', 'linear-gradient(180deg,var(--modal-top),var(--modal-bottom))');
+    document.documentElement.style.setProperty('--search-bg', '#f34367');
+    document.documentElement.style.setProperty('--card-top', 'rgba(255,255,255,0.02)'); document.documentElement.style.setProperty('--card-bottom', 'rgba(255,255,255,0.01)');
+    document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.03)'); document.documentElement.style.setProperty('--accent', '#06b6d4'); document.documentElement.style.setProperty('--accent-2', '#00aeb0');
+    document.documentElement.style.setProperty('--muted', '#98a0ad'); document.documentElement.style.setProperty('--text', '#e6eef6'); document.documentElement.style.setProperty('color-scheme','dark');
+    customColor.style.display = 'none';
+  }else if(name === 'truffled'){
+    const TRUFFLE = '#121e1e'; const GRID_LINE = '#192425';
+    document.documentElement.style.setProperty('--bg-top', TRUFFLE); document.documentElement.style.setProperty('--bg-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--bg-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE}), repeating-linear-gradient(0deg, ${GRID_LINE} 0px, ${GRID_LINE} 3px, transparent 3px, transparent 30px), repeating-linear-gradient(90deg, ${GRID_LINE} 0px, ${GRID_LINE} 3px, transparent 3px, transparent 30px)`);
+    document.documentElement.style.setProperty('--card-top', TRUFFLE); document.documentElement.style.setProperty('--card-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--card-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE})`);
+    document.documentElement.style.setProperty('--modal-top', TRUFFLE); document.documentElement.style.setProperty('--modal-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--modal-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE})`);
+    document.documentElement.style.setProperty('--topbar-top', TRUFFLE); document.documentElement.style.setProperty('--topbar-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--topbar-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE})`);
+    document.documentElement.style.setProperty('--footer-top', TRUFFLE); document.documentElement.style.setProperty('--footer-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--footer-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE})`);
+    document.documentElement.style.setProperty('--iframe-topbar-top', TRUFFLE); document.documentElement.style.setProperty('--iframe-topbar-bottom', TRUFFLE);
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', `linear-gradient(180deg,${TRUFFLE},${TRUFFLE})`);
+    document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.02)'); document.documentElement.style.setProperty('--text', '#dfe7e7'); document.documentElement.style.setProperty('--muted', '#9aa8a8');
+    document.documentElement.style.setProperty('--accent', '#3a8a87'); document.documentElement.style.setProperty('--accent-2', '#2f6f6d');
+    document.documentElement.style.setProperty('--search-bg', 'var(--glass)'); document.documentElement.style.setProperty('color-scheme','dark');
+    customColor.style.display = 'none';
+  }else if(name === 'custom'){
+    customColor.style.display = '';
+    document.documentElement.style.setProperty('--accent', customColor.value); document.documentElement.style.setProperty('--accent-2', customColor.value);
+    document.documentElement.style.setProperty('--bg-top', '#000000'); document.documentElement.style.setProperty('--bg-bottom', '#000000');
+    document.documentElement.style.setProperty('--modal-top', '#0b0b0b'); document.documentElement.style.setProperty('--modal-bottom', '#050505');
+    document.documentElement.style.setProperty('--card-top', 'rgba(255,255,255,0.02)'); document.documentElement.style.setProperty('--card-bottom', 'rgba(255,255,255,0.01)');
+    document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.03)'); document.documentElement.style.setProperty('--muted', '#98a0ad'); document.documentElement.style.setProperty('--text', '#e6eef6');
+    document.documentElement.style.setProperty('--topbar-top', 'rgba(7,16,26,0.36)'); document.documentElement.style.setProperty('--topbar-bottom', 'rgba(12,23,34,0.28)');
+    document.documentElement.style.setProperty('--topbar-gradient', 'linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom))');
+    document.documentElement.style.setProperty('--footer-top', 'rgba(7,16,26,0.30)'); document.documentElement.style.setProperty('--footer-bottom', 'rgba(12,23,34,0.22)');
+    document.documentElement.style.setProperty('--footer-gradient', 'linear-gradient(180deg,var(--footer-top),var(--footer-bottom))');
+    document.documentElement.style.setProperty('--iframe-topbar-top', 'rgba(0,0,0,0.18)'); document.documentElement.style.setProperty('--iframe-topbar-bottom', 'rgba(0,0,0,0.10)');
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', 'linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom))');
+    document.documentElement.style.setProperty('--search-bg', 'var(--glass)'); document.documentElement.style.setProperty('color-scheme','dark');
+  }else{
+    customColor.style.display = 'none';
+    document.documentElement.style.setProperty('--bg-top', '#07101a'); document.documentElement.style.setProperty('--bg-bottom', '#0c1722');
+    document.documentElement.style.setProperty('--modal-top', '#07121a'); document.documentElement.style.setProperty('--modal-bottom', '#051018');
+    document.documentElement.style.setProperty('--card-top', 'rgba(255,255,255,0.02)'); document.documentElement.style.setProperty('--card-bottom', 'rgba(255,255,255,0.01)');
+    document.documentElement.style.setProperty('--glass', 'rgba(255,255,255,0.03)'); document.documentElement.style.setProperty('--accent', '#06b6d4'); document.documentElement.style.setProperty('--accent-2', '#00aeb0');
+    document.documentElement.style.setProperty('--muted', '#98a0ad'); document.documentElement.style.setProperty('--text', '#e6eef6'); document.documentElement.style.setProperty('--logo-text', '#021018');
+    document.documentElement.style.setProperty('--topbar-top', 'rgba(7,16,26,0.36)'); document.documentElement.style.setProperty('--topbar-bottom', 'rgba(12,23,34,0.28)');
+    document.documentElement.style.setProperty('--topbar-gradient', 'linear-gradient(180deg,var(--topbar-top),var(--topbar-bottom))');
+    document.documentElement.style.setProperty('--footer-top', 'rgba(7,16,26,0.30)'); document.documentElement.style.setProperty('--footer-bottom', 'rgba(12,23,34,0.22)');
+    document.documentElement.style.setProperty('--footer-gradient', 'linear-gradient(180deg,var(--footer-top),var(--footer-bottom))');
+    document.documentElement.style.setProperty('--iframe-topbar-top', 'rgba(0,0,0,0.18)'); document.documentElement.style.setProperty('--iframe-topbar-bottom', 'rgba(0,0,0,0.10)');
+    document.documentElement.style.setProperty('--iframe-topbar-gradient', 'linear-gradient(180deg,var(--iframe-topbar-top),var(--iframe-topbar-bottom))');
+    document.documentElement.style.setProperty('--search-bg', 'var(--glass)'); document.documentElement.style.setProperty('color-scheme','dark');
+  }
+  document.documentElement.style.setProperty('--bg-gradient', `linear-gradient(180deg,var(--bg-top),var(--bg-bottom))`);
+  document.documentElement.style.setProperty('--card-gradient', `linear-gradient(180deg,var(--card-top),var(--card-bottom))`);
+  document.documentElement.style.setProperty('--modal-gradient', `linear-gradient(180deg,var(--modal-top),var(--modal-bottom))`);
+}
+
+function saveSettings(){
+  try{
+    localStorage.setItem('gamesHub_settings', JSON.stringify({
+      order: orderSelect.value, theme: themeSelect.value, color: customColor.value, size: entrySize ? entrySize.value : 100,
+      movieSize: movieEntrySize ? movieEntrySize.value : 100,
+      branch: selectedBranch || 'main', openInNewTab: (document.getElementById('openInNewTab') && document.getElementById('openInNewTab').checked) ? true : false,
+      moreDetailsStyle: moreDetailsStyle ? moreDetailsStyle.value : 'popup',
+      moreDetailsPopupSize: moreDetailsPopupSize ? moreDetailsPopupSize.value : 50
+    }));
+    localStorage.setItem('gamesHub_branch', selectedBranch || 'main');
+    try{ localStorage.setItem('gamesHub_openNewTab', (document.getElementById('openInNewTab') && document.getElementById('openInNewTab').checked) ? 'true' : 'false'); }catch(e){}
+  }catch(e){}
+}
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem('gamesHub_settings');
+    if(!raw){
+      applyEntrySize(entrySize ? entrySize.value : 100);
+      if(branchSelect) branchSelect.value = selectedBranch;
+      try{ if(document.getElementById('openInNewTab')) document.getElementById('openInNewTab').checked = localStorage.getItem('gamesHub_openNewTab') === 'true'; }catch(e){}
+      applyTheme(themeSelect.value);
+      applyOrdering(orderSelect.value);
+      return;
+    }
+    const s = JSON.parse(raw);
+    if(s.order) orderSelect.value = s.order;
+    if(s.theme) themeSelect.value = s.theme;
+    if(s.color) customColor.value = s.color;
+    if(s.size && entrySize){ entrySize.value = String(s.size); if(entrySizeLabel) entrySizeLabel.textContent = s.size + '%'; applyEntrySize(s.size); }
+    else applyEntrySize(entrySize ? entrySize.value : 100);
+    if(s.movieSize && movieEntrySize){ movieEntrySize.value = String(s.movieSize); if(movieEntrySizeLabel) movieEntrySizeLabel.textContent = s.movieSize + '%'; applyMovieEntrySize(s.movieSize); }
+    else applyMovieEntrySize(movieEntrySize ? movieEntrySize.value : 150);
+    if(s.moreDetailsStyle && moreDetailsStyle){ moreDetailsStyle.value = s.moreDetailsStyle; applyMoreDetailsStyle(); }
+    if(s.moreDetailsPopupSize && moreDetailsPopupSize){ moreDetailsPopupSize.value = String(s.moreDetailsPopupSize); if(moreDetailsPopupSizeLabel) moreDetailsPopupSizeLabel.textContent = s.moreDetailsPopupSize + '%'; applyMoreDetailsPopupSize(); }
+    if(s.branch){ selectedBranch = s.branch; localStorage.setItem('gamesHub_branch', selectedBranch); if(branchSelect) branchSelect.value = selectedBranch; }
+    else if(branchSelect) branchSelect.value = selectedBranch;
+    try{ if(document.getElementById('openInNewTab')){ if(typeof s.openInNewTab !== 'undefined'){ document.getElementById('openInNewTab').checked = !!s.openInNewTab; localStorage.setItem('gamesHub_openNewTab', s.openInNewTab ? 'true' : 'false'); }else{ document.getElementById('openInNewTab').checked = localStorage.getItem('gamesHub_openNewTab') === 'true'; } } }catch(e){}
+    GAME_LIST_URL = getGameListUrl();
+    if(s.theme === 'custom') customColor.style.display = '';
+    applyTheme(themeSelect.value);
+    applyOrdering(orderSelect.value);
+  }catch(e){}
+}
+
+orderSelect.addEventListener('change', saveSettings);
+themeSelect.addEventListener('change', saveSettings);
+customColor.addEventListener('input', saveSettings);
+
+const openInNewTabCheckbox = document.getElementById('openInNewTab');
+if(openInNewTabCheckbox){
+  openInNewTabCheckbox.checked = localStorage.getItem('gamesHub_openNewTab') === 'true';
+  openInNewTabCheckbox.addEventListener('change', ()=>{ localStorage.setItem('gamesHub_openNewTab', openInNewTabCheckbox.checked ? 'true' : 'false'); saveSettings(); });
+}
+
+loadSettings();
+
+/* Legal */
+const legalBtn = document.getElementById('legalBtn');
+const legalBackdrop = document.getElementById('legalBackdrop');
+const legalContent = document.getElementById('legalContent');
+const closeLegal = document.getElementById('closeLegal');
+const LEGAL_MD = `
+# | Ownership & Rights |
+All games, trademarks, logos, characters, audio, images, and other assets hosted or referenced in this repository are the property of their respective owners.
+I do not claim ownership of any game assets, intellectual property, trademarks, or copyrighted materials associated with the hosted games unless explicitly stated.
+This repository is intended for educational, archival, and preservation purposes.
+# | Lawful Acquisition |
+All game files hosted here were obtained through legitimate and lawful means. No content has been knowingly acquired through unauthorized distribution channels.
+If any content appears to violate copyright, licensing terms, or distribution agreements, this is unintentional.
+# | No Affiliation |
+This project is not affiliated with, endorsed by, sponsored by, or approved by any original game developers, publishers, or rights holders.
+All product names, logos, brands, and registered trademarks remain the property of their respective owners.
+# | Asset / Game DMCA takedown |
+If you are a copyright holder, developer, publisher, or authorized representative and believe that content hosted in this repository infringes your rights:
+Please open an issue or contact me directly with:
+Proof of ownership or authorization
+Set [Subject] as either "DMCA Takedown" or something close to that
+And a clear request for removal of a specific game or asset
+Upon receiving the email and whenever i next check my email, the content will be removed as soon as possible.
+# | No Commercial Intent |
+This project is provided free of charge, i also am making no money AT ALL from the repo / related repos that hold the assets for this website, and others. No ownership is claimed, and no commercial profit is intended from the hosted content.
+# | Ports |
+I didnt make any of these web ports (Atless stated otherwise)
+Ports are mostly made by [bog](https://bog.lat/), [breadbb](https://github.com/gn-math), [98corbins](https://98corbins.itch.io/), and [slqnt](https://www.slqnt.dev/)   *(I HAVE NO AFFILIATION WITH ANY OF THESE PORTERS OR THEIR WEBSITES)*
+# | Contact |
+For any legal concerns (Like takedowns), please reach out via GitHub issues or more preferably, my email at t4ctica1yt@gmail.com.
+`;
+function renderSimpleMarkdown(md){
+  const lines = md.split(/\r?\n/);
+  const out = lines.map(line=>{
+    const hMatch = line.match(/^(#{1,6})\s*(.*)$/);
+    if(hMatch){ const level = Math.min(6, hMatch[1].length); return '<div style="font-weight:800;font-size:' + (18 - (level-1)*1.5) + 'px;margin:10px 0 6px;color:var(--text)">' + escapeHtml(hMatch[2]) + '</div>'; }
+    const pipeHead = line.match(/^\|\s*(.+?)\s*\|$/);
+    if(pipeHead) return '<div style="font-weight:800;font-size:16px;margin:10px 0;color:var(--text)">' + escapeHtml(pipeHead[1]) + '</div>';
+    let processed = escapeHtml(line).replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:underline">$1</a>');
+    processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text)">$1</strong>');
+    processed = processed.replace(/\*(.+?)\*/g, '<em style="color:var(--muted)">$1</em>');
+    if(processed.trim() === '') return '<div style="height:8px"></div>';
+    return '<div style="margin:6px 0">' + processed + '</div>';
+  });
+  return out.join('');
+}
+function openLegal(){
+  legalContent.innerHTML = renderSimpleMarkdown(LEGAL_MD);
+  legalBackdrop.style.display = 'flex';
+  legalBackdrop.classList.add('show');
+  legalBackdrop.setAttribute('aria-hidden','false');
+}
+function closeLegalFn(){
+  legalBackdrop.classList.remove('show');
+  legalBackdrop.setAttribute('aria-hidden','true');
+  setTimeout(()=> { legalBackdrop.style.display = 'none'; }, 260);
+}
+legalBtn?.addEventListener('click', openLegal);
+closeLegal?.addEventListener('click', closeLegalFn);
+legalBackdrop?.addEventListener('click', (e)=>{ if(e.target === legalBackdrop) closeLegalFn(); });
+
+/* ---------- Movie Server Picker & Netflix-style Media Player ---------- */
+const MOVIE_SOURCES = [
+  { name: 'Vidsrc' }
+];
+
+let currentPlayerItem = null;
+let playerControlsVisible = true;
+let playerHideTimer = null;
+
+async function pickMovieServer(){
+  return new Promise((resolve)=>{
+    const picker = document.createElement('div');
+    picker.style.position = 'fixed'; picker.style.inset = '0'; picker.style.display = 'flex'; picker.style.alignItems = 'center'; picker.style.justifyContent = 'center'; picker.style.zIndex = '1000'; picker.style.background = 'rgba(0,0,0,0.6)';
+    const dialog = document.createElement('div');
+    dialog.style.width = 'min(420px,92vw)'; dialog.style.background = 'var(--modal-gradient)'; dialog.style.padding = '16px'; dialog.style.borderRadius = '12px'; dialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.6)'; dialog.style.textAlign = 'center';
+    dialog.innerHTML = `<div style="font-weight:800;font-size:18px;color:var(--text);margin-bottom:8px">Pick a Source</div><div style="color:var(--muted);font-size:13px;margin-bottom:12px">Select a streaming source</div>`;
+    const buttonsWrap = document.createElement('div');
+    buttonsWrap.style.display = 'flex'; buttonsWrap.style.gap = '8px'; buttonsWrap.style.justifyContent = 'center'; buttonsWrap.style.flexWrap = 'wrap'; buttonsWrap.style.marginBottom = '12px';
+    MOVIE_SOURCES.forEach((src, i)=>{
+      const btn = document.createElement('button');
+      btn.textContent = src.name; btn.style.padding = '10px 14px'; btn.style.borderRadius = '10px'; btn.style.border = '1px solid rgba(255,255,255,0.04)'; btn.style.background = 'transparent'; btn.style.color = 'var(--text)'; btn.style.cursor = 'pointer'; btn.style.fontWeight = '600';
+      btn.addEventListener('click', ()=>{ document.body.removeChild(picker); resolve(i); });
+      buttonsWrap.appendChild(btn);
+    });
+    const cancel = document.createElement('button');
+    cancel.textContent = 'Cancel'; cancel.style.marginTop = '6px'; cancel.style.padding = '8px 12px'; cancel.style.borderRadius = '10px'; cancel.style.border = '1px solid rgba(255,255,255,0.04)'; cancel.style.background = 'transparent'; cancel.style.color = 'var(--muted)';
+    cancel.addEventListener('click', ()=>{ document.body.removeChild(picker); resolve(-1); });
+    dialog.appendChild(buttonsWrap); dialog.appendChild(cancel); picker.appendChild(dialog);
+    document.body.appendChild(picker);
+  });
+}
+
+function openMoviePlayer(tmdbId, title, isTV, season, episode){
+  const overlay = document.getElementById('moviePlayerOverlay');
+  const frame = document.getElementById('moviePlayerFrame');
+  const loading = document.getElementById('moviePlayerLoading');
+  const titleEl = document.getElementById('moviePlayerTitle');
+  const topbar = document.getElementById('moviePlayerTopbar');
+  const bottom = document.getElementById('moviePlayerBottom');
+  const url = isTV ? `https://vidsrc.sbs/embed/tv/${tmdbId}/${season}/${episode}?controls=0` : `https://vidsrc.sbs/embed/movie/${tmdbId}?controls=0`;
+  titleEl.textContent = title;
+  frame.src = url;
+  loading.classList.add('active');
+  topbar.classList.remove('visible');
+  bottom.classList.remove('visible');
+  playerControlsVisible = false;
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>{ loading.classList.remove('active'); showPlayerControls(); }, 1500);
+  startPlayerHideTimer();
+}
+
+function showPlayerControls(){
+  const topbar = document.getElementById('moviePlayerTopbar');
+  const bottom = document.getElementById('moviePlayerBottom');
+  topbar.classList.add('visible'); bottom.classList.add('visible');
+  playerControlsVisible = true; startPlayerHideTimer();
+}
+
+function hidePlayerControls(){
+  document.getElementById('moviePlayerTopbar').classList.remove('visible');
+  document.getElementById('moviePlayerBottom').classList.remove('visible');
+  playerControlsVisible = false;
+}
+
+function startPlayerHideTimer(){
+  if(playerHideTimer) clearTimeout(playerHideTimer);
+  playerHideTimer = setTimeout(()=>{ if(playerControlsVisible) hidePlayerControls(); }, 3000);
+}
+
+function closeMoviePlayer(){
+  const overlay = document.getElementById('moviePlayerOverlay');
+  const frame = document.getElementById('moviePlayerFrame');
+  const loading = document.getElementById('moviePlayerLoading');
+  if(playerHideTimer) clearTimeout(playerHideTimer);
+  frame.src = ''; loading.classList.add('active');
+  overlay.classList.remove('active'); document.body.style.overflow = '';
+  const fsBtn = document.getElementById('playerFullscreen');
+  if(fsBtn) fsBtn.querySelector('img').src = 'https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/EnterFull.png';
+  if(document.fullscreenElement) document.exitFullscreen();
+  currentPlayerItem = null;
+}
+
+document.getElementById('moviePlayerExit')?.addEventListener('click', closeMoviePlayer);
+document.getElementById('playerFullscreen')?.addEventListener('click', ()=>{
+  const overlay = document.getElementById('moviePlayerOverlay');
+  if(!document.fullscreenElement){
+    overlay.requestFullscreen().catch(()=>{});
+    document.getElementById('playerFullscreen').querySelector('img').src = 'https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/ExitFull.png';
+  } else {
+    document.exitFullscreen();
+    document.getElementById('playerFullscreen').querySelector('img').src = 'https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/EnterFull.png';
+  }
+});
+document.addEventListener('fullscreenchange', ()=>{
+  const fsBtn = document.getElementById('playerFullscreen');
+  if(!fsBtn) return;
+  fsBtn.querySelector('img').src = document.fullscreenElement
+    ? 'https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/ExitFull.png'
+    : 'https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2/assets/MediaPlayer/EnterFull.png';
+});
+document.getElementById('moviePlayerOverlay')?.addEventListener('mousemove', ()=>{
+  if(!playerControlsVisible) showPlayerControls(); else startPlayerHideTimer();
+});
+
+async function playMovieWithPicker(movie, isTV, season, episode){
+  if(!movie){ showToast('No movie selected'); return; }
+  const sourceIdx = await pickMovieServer();
+  if(sourceIdx < 0) return;
+  openMoviePlayer(movie.id, movie.title || movie.name || 'Now Playing', isTV, season, episode);
+}
+
+/* Full-page exit button */
+const movieExitFullPageBtn = document.getElementById('movieExitFullPageBtn');
+if(movieExitFullPageBtn){
+  movieExitFullPageBtn.addEventListener('click', ()=>{ closeMovieModal(); });
+}
+/* Show/hide full-page exit button based on modal state */
+const origApplyMoreDetailsStyle = applyMoreDetailsStyle;
+applyMoreDetailsStyle = function(){
+  origApplyMoreDetailsStyle.call(this);
+  if(movieExitFullPageBtn){
+    const style = moreDetailsStyle ? moreDetailsStyle.value : 'popup';
+    const isOpen = movieDetailModal.classList.contains('show');
+    movieExitFullPageBtn.style.display = (style === 'fullpage' && isOpen) ? '' : 'none';
+  }
+};
+/* Watch for modal open/close to update exit button */
+const origCloseMovieModal = closeMovieModal;
+closeMovieModal = function(){
+  origCloseMovieModal.call(this);
+  if(movieExitFullPageBtn) movieExitFullPageBtn.style.display = 'none';
+};
+/* Override the show logic to check full-page */
+movieDetailModal?.addEventListener('transitionend', ()=>{
+  if(movieExitFullPageBtn && movieDetailModal.classList.contains('show')){
+    const style = moreDetailsStyle ? moreDetailsStyle.value : 'popup';
+    movieExitFullPageBtn.style.display = (style === 'fullpage') ? '' : 'none';
+  }
+});
+</script>
+</body>
+</html>
