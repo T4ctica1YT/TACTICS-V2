@@ -2213,5 +2213,41 @@
     cover: 'BlueShift.png',
     description: "Half-Life: Blue Shift is the second standalone expansion pack for the 1998 first-person shooter Half-Life. Developed by Gearbox Software and released on June 12, 2001, the game allows players to experience the original game's events from the perspective of Barney Calhoun, a Black Mesa security guard.",
     features: "Physics, FPS, Source Engine"
+    },
+  'Peak.html': {
+    title: 'PEAK',
+    year: '2025',
+    system: 'PC',
+    genre: 'Co-op, Survival',
+    cover: 'Peak.jpg',
+    description: "A chaotic co-operative climbing survival game for 1–4 players.  Stranded as nature scouts after a plane crash, you must ascend a procedurally generated mountain to signal for rescue.",
+    features: "Unity, Climbing"
+  },
+  'Cluster.html': {
+    title: 'Cluster Truck',
+    year: '2016',
+    system: 'PC',
+    genre: 'Platformer',
+    cover: 'Cluster.jpg',
+    description: "A chaotic first-person physics platformer where the ground is lava.  Players must sprint and leap across a highway of speeding, crashing semi-trucks to reach the finish line without touching the road.",
+    features: "Unity, First person"
+  },
+  'GTA3.html': {
+    title: 'Grand Theft Auto 3',
+    year: '2001',
+    system: 'PC',
+    genre: 'Action, Open-World',
+    cover: 'GTA3.png',
+    description: "A revolutionary open-world action-adventure game that transitioned the series into 3D.  Set in the gritty Liberty City, players control the silent protagonist Claude, navigating a criminal underworld of betrayal and revenge.",
+    features: "Open-world, Story-driven, Crime, Vehicles."
+  },
+  'Among.html': {
+    title: 'Among Us',
+    year: '2018',
+    system: 'PC',
+    genre: 'Social, Murder Mystery Like',
+    cover: 'Among.jpg',
+    description: "A chaotic social deduction party game for 4–15 players set in space.  Crewmates must complete maintenance tasks to prepare the ship for departure, while hidden Impostors sabotage systems and eliminate the crew one by one.",
+    features: "Unity, Multiplayer"
   }
 }
