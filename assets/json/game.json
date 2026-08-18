@@ -2237,7 +2237,7 @@
     year: '2001',
     system: 'PC',
     genre: 'Action, Open-World',
-    cover: 'Grand Theft Auto Vice City.png',
+    cover: 'GTA3.png',
     description: "A revolutionary open-world action-adventure game that transitioned the series into 3D.  Set in the gritty Liberty City, players control the silent protagonist Claude, navigating a criminal underworld of betrayal and revenge.",
     features: "Open-world, Story-driven, Crime, Vehicles."
   },
