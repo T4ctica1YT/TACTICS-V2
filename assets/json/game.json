@@ -2249,5 +2249,131 @@
     cover: 'Among.jpg',
     description: "A chaotic social deduction party game for 4–15 players set in space.  Crewmates must complete maintenance tasks to prepare the ship for departure, while hidden Impostors sabotage systems and eliminate the crew one by one.",
     features: "Unity, Multiplayer"
-  }
+    },
+  '20min.html': {
+    title: '20 Minutes till Dawn',
+    year: '2022',
+    system: 'PC',
+    genre: 'Action, Roguelike',
+    cover: '20min.jpg',
+    description: "20 Minutes Till Dawn is a 2022 roguelike game created by the independent developer flanne. The player controls a character who fights against continuous waves of monsters, with the goal being to survive the onslaught until dawn.",
+    features: "Roguelike, Shooter"
+  },
+  'Cruelty.html': {
+    title: 'Cruelty Squad (Port)',
+    year: '2021',
+    system: 'PC',
+    genre: 'Immersive Sim, FPS, Horror',
+    cover: 'Cruelty.png',
+    description: "A biopunk immersive sim shooter where you take on corporate assassination contracts in a decaying, surreal version of Earth run by five megacorporations.",
+    features: "Immersive Sim, FPS, Surreal art style."
+},
+'Lob.html': {
+    title: 'Lobotomy Company (Port)',
+    year: '2018',
+    system: 'PC',
+    genre: 'Management, Horror, Simulation',
+    cover: 'Lob.jpg',
+    description: "A dark management sim where you run a corporation extracting energy from imprisoned reality-bending abnormalities. Keep your employees alive and your quotas met.",
+    features: "Management Sim, Horror, Roguelike elements."
+},
+'FG3D.html': {
+    title: 'Flying Gorilla 3D (Port)',
+    year: '2022',
+    system: 'PC',
+    genre: 'Simulation, Open World',
+    cover: 'FG3D.webp',
+    description: "An open-world ape simulator where you swing, climb, and glide through a sandbox environment as a gorilla with unlikely flying abilities.",
+    features: "Open World, Physics-based movement, Simulation."
+},
+'SGD.html': {
+    title: 'Suicide Guy Deluxe (Port)',
+    year: '2017',
+    system: 'PC',
+    genre: 'Puzzle, Platformer, Comedy',
+    cover: 'SGD.jpg',
+    description: "A dark-comedy puzzle platformer about a man trapped in a dream, searching for increasingly absurd and elaborate ways to wake himself up.",
+    features: "Puzzle, Physics-based, Dark comedy."
+},
+'Twilight.html': {
+    title: 'The Legend of Zelda: Twilight Princess (Port)',
+    year: '2006',
+    system: 'PC',
+    genre: 'Action-Adventure, RPG',
+    cover: 'Twilight.png',
+    description: "Link must restore light to a kingdom consumed by a mysterious Twilight, transforming into a wolf to navigate a shadow-covered Hyrule and uncover an ancient threat.",
+    features: "Action-Adventure, Wolf transformation, Dungeon puzzles."
+},
+'Inscryption.html': {
+    title: 'Inscryption (Port)',
+    year: '2021',
+    system: 'PC',
+    genre: 'Card Game, Horror, Roguelike',
+    cover: 'Inscryption.jpg',
+    description: "A card-based, escape-room-inspired odyssey that blends deckbuilding, dark surrealist horror, and unexpected surprises within a mysterious cabin.",
+    features: "Deckbuilding, Roguelike, Psychological Horror."
+},
+'SMBR.html': {
+    title: 'Super Mario Bros. Remastered (Port)',
+    year: '2023',
+    system: 'PC',
+    genre: 'Platformer',
+    cover: 'SMBR.png',
+    description: "A fan-made overhaul of the classic Super Mario Bros. with updated visuals, physics, and level design while keeping the original's core platforming feel.",
+    features: "Fan Remake, Platformer, Updated visuals."
+},
+'HTF.html': {
+    title: 'How To Fish (Port)',
+    year: '2022',
+    system: 'PC',
+    genre: 'Casual, Simulation',
+    cover: 'HTF.jpg',
+    description: "A relaxed, physics-based fishing game where you cast, reel, and reposition your rig by hand to reel in a variety of fish.",
+    features: "Casual, Physics-based, Simulation."
+},
+'MIS.html': {
+    title: 'Miside (Port)',
+    year: '2024',
+    system: 'PC',
+    genre: 'Horror, Adventure, Puzzle',
+    cover: 'MIS.jpg',
+    description: "After downloading a strange app, you're pulled into the world of a cheerful AI girl named Mita — but her cozy house hides increasingly unsettling secrets.",
+    features: "Horror, Exploration, Puzzle."
+},
+'SFS.html': {
+    title: 'Space Flight Simulator (Port)',
+    year: '2018',
+    system: 'PC',
+    genre: 'Simulation',
+    cover: 'SFS.png',
+    description: "Design, build, and launch your own rockets, then pilot them into orbit and beyond in this physics-based space simulation.",
+    features: "Rocket building, Orbital physics, Simulation."
+},
+'Fish.html': {
+    title: 'FISH (Port)',
+    year: '2023',
+    system: 'PC',
+    genre: 'Casual, Arcade',
+    cover: 'Fish.jpg',
+    description: "A simple, addictive arcade fishing game — cast your line, reel in a catch, and upgrade your gear to land bigger fish.",
+    features: "Casual, Upgrades, High score."
+},
+'20min.html': {
+    title: '20 Minutes Till Dawn (Port)',
+    year: '2021',
+    system: 'PC',
+    genre: 'Roguelite, Survival, Shooter',
+    cover: '20min.jpg',
+    description: "A roguelite survival shooter where you fend off endless waves of monstrous enemies for 20 minutes, choosing powerful upgrades to survive till dawn.",
+    features: "Roguelite, Horde survival, Upgrades."
+},
+'isaac.html': {
+    title: 'The Binding of Isaac: Repentance+ (Port)',
+    year: '2024',
+    system: 'PC',
+    genre: 'Roguelike, Action',
+    cover: 'isaac.png',
+    description: "The definitive edition of The Binding of Isaac: Rebirth, combining the base game with the Afterbirth, Afterbirth+, and Repentance expansions and their added content.",
+    features: "Roguelike, Dungeon crawler, Full DLC content."
+}
 }
