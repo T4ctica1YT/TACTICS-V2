@@ -2260,7 +2260,7 @@
     features: "Roguelike, Shooter"
   },
   'Cruelty.html': {
-    title: 'Cruelty Squad (Port)',
+    title: 'Cruelty Squad',
     year: '2021',
     system: 'PC',
     genre: 'Immersive Sim, FPS, Horror',
@@ -2269,7 +2269,7 @@
     features: "Immersive Sim, FPS, Surreal art style."
 },
 'Lob.html': {
-    title: 'Lobotomy Company (Port)',
+    title: 'Lobotomy Company',
     year: '2018',
     system: 'PC',
     genre: 'Management, Horror, Simulation',
@@ -2278,16 +2278,16 @@
     features: "Management Sim, Horror, Roguelike elements."
 },
 'FG3D.html': {
-    title: 'Flying Gorilla 3D (Port)',
+    title: 'Flying Gorilla 3D',
     year: '2022',
     system: 'PC',
     genre: 'Simulation, Open World',
     cover: 'FG3D.webp',
-    description: "An open-world ape simulator where you swing, climb, and glide through a sandbox environment as a gorilla with unlikely flying abilities.",
+    description: "Gorrila fly in 3d :).",
     features: "Open World, Physics-based movement, Simulation."
 },
 'SGD.html': {
-    title: 'Suicide Guy Deluxe (Port)',
+    title: 'Suicide Guy Deluxe',
     year: '2017',
     system: 'PC',
     genre: 'Puzzle, Platformer, Comedy',
@@ -2296,7 +2296,7 @@
     features: "Puzzle, Physics-based, Dark comedy."
 },
 'Twilight.html': {
-    title: 'The Legend of Zelda: Twilight Princess (Port)',
+    title: 'The Legend of Zelda: Twilight Princess',
     year: '2006',
     system: 'PC',
     genre: 'Action-Adventure, RPG',
@@ -2305,7 +2305,7 @@
     features: "Action-Adventure, Wolf transformation, Dungeon puzzles."
 },
 'Inscryption.html': {
-    title: 'Inscryption (Port)',
+    title: 'Inscryption',
     year: '2021',
     system: 'PC',
     genre: 'Card Game, Horror, Roguelike',
@@ -2314,7 +2314,7 @@
     features: "Deckbuilding, Roguelike, Psychological Horror."
 },
 'SMBR.html': {
-    title: 'Super Mario Bros. Remastered (Port)',
+    title: 'Super Mario Bros. Remastered',
     year: '2023',
     system: 'PC',
     genre: 'Platformer',
@@ -2323,7 +2323,7 @@
     features: "Fan Remake, Platformer, Updated visuals."
 },
 'HTF.html': {
-    title: 'How To Fish (Port)',
+    title: 'How To Fish',
     year: '2022',
     system: 'PC',
     genre: 'Casual, Simulation',
@@ -2332,7 +2332,7 @@
     features: "Casual, Physics-based, Simulation."
 },
 'MIS.html': {
-    title: 'Miside (Port)',
+    title: 'Miside',
     year: '2024',
     system: 'PC',
     genre: 'Horror, Adventure, Puzzle',
@@ -2341,7 +2341,7 @@
     features: "Horror, Exploration, Puzzle."
 },
 'SFS.html': {
-    title: 'Space Flight Simulator (Port)',
+    title: 'Space Flight Simulator',
     year: '2018',
     system: 'PC',
     genre: 'Simulation',
@@ -2350,7 +2350,7 @@
     features: "Rocket building, Orbital physics, Simulation."
 },
 'Fish.html': {
-    title: 'FISH (Port)',
+    title: 'FISH',
     year: '2023',
     system: 'PC',
     genre: 'Casual, Arcade',
@@ -2359,7 +2359,7 @@
     features: "Casual, Upgrades, High score."
 },
 '20min.html': {
-    title: '20 Minutes Till Dawn (Port)',
+    title: '20 Minutes Till Dawn',
     year: '2021',
     system: 'PC',
     genre: 'Roguelite, Survival, Shooter',
@@ -2368,7 +2368,7 @@
     features: "Roguelite, Horde survival, Upgrades."
 },
 'isaac.html': {
-    title: 'The Binding of Isaac: Repentance+ (Port)',
+    title: 'The Binding of Isaac: Repentance+',
     year: '2024',
     system: 'PC',
     genre: 'Roguelike, Action',
