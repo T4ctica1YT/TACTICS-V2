@@ -36,12 +36,12 @@
     description: "It's 1955, and you're the new doorman. Your job is to check IDs and make sure only real residents get in. But be careful, doppelgangers are on the loose!",
     features: "Simulation, Horror, Deduction gameplay."
   },
-  'ULTRAKILL.html': {
+  'ULTRAKILLNEW.html': {
     title: 'ULTRAKILL',
     year: '2020',
     system: 'PC',
     genre: 'Action, FPS, Indie',
-    cover: 'ultrakill_cover.png',
+    cover: 'ULTRAKILLNEW.jpg',
     description: "A fast-paced ultraviolent retro FPS combining score-based action with raw speed. Rip and tear through hordes of demons and machines.",
     features: "Score-based combat, Fast movement, Retro FPS."
   },
@@ -2377,13 +2377,13 @@
     description: "The definitive edition of The Binding of Isaac: Rebirth, combining the base game with the Afterbirth, Afterbirth+, and Repentance expansions and their added content.",
     features: "Roguelike, Dungeon crawler, Full DLC content."
   },
-  'ULTRAKILLNEW.html': {
-    title: 'ULTRAKILL',
-    year: '2020',
+  'SMWR.html': {
+    title: 'Super Mario World Remastered',
+    year: '2025',
     system: 'PC',
-    genre: 'Action, FPS, Indie',
-    cover: 'ULTRAKILLNEW.jpg',
-    description: "A fast-paced ultraviolent retro FPS combining score-based action with raw speed. Rip and tear through hordes of demons and machines.",
-    features: "Score-based combat, Fast movement, Retro FPS."
+    genre: 'Platformer',
+    cover: 'SMWR.PNG',
+    description: "A remaster for the classic game Super Mario World, adding new gameplay mechanics, new settings, and local/online multiplayer.",
+    features: "Remaster, Singleplayer, Multiplayer"
   }
 }
