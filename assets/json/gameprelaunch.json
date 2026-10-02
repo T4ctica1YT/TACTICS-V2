@@ -2382,7 +2382,7 @@
     year: '2025',
     system: 'PC',
     genre: 'Platformer',
-    cover: 'SMWR.PNG',
+    cover: 'SMWR.png',
     description: "A remaster for the classic game Super Mario World, adding new gameplay mechanics, new settings, and local/online multiplayer.",
     features: "Remaster, Singleplayer, Multiplayer"
   }
