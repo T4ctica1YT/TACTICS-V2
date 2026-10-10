@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TACTICS - V2 Proxy</title>
+<!--
+  TACTICS - V2 Proxy frame.
+  One of these is loaded per browser tab in the Proxy tab of the site. It registers the
+  Scramjet service worker (sw.js), sets up the Wisp transport and shows the proxied page.
+  It talks to the browser UI with postMessage. This file must be hosted on the same origin
+  as sw.js and baremux-worker.js (GitHub Pages); every library comes from jsDelivr.
+-->
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+iframe{border:0;width:100%;height:100%;display:block;background:#fff}
+#status{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#202124;color:#e8eaed;padding:24px;box-sizing:border-box;text-align:center}
+#status.show{display:flex}
+#status .box{max-width:520px}
+#status h1{font-size:20px;margin:0 0 10px}
+#status p{font-size:14px;color:#9aa0a6;line-height:1.5;margin:0 0 8px;word-break:break-word}
+#status button{margin-top:12px;background:#8ab4f8;color:#202124;border:0;border-radius:18px;padding:8px 18px;font-weight:600;cursor:pointer}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.all.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@2.1.9/dist/index.js"></script>
+</head>
+<body>
+<div id="status"><div class="box"><h1 id="statusTitle">Starting proxy...</h1><p id="statusText"></p><button id="statusRetry" style="display:none">Try again</button></div></div>
+<script>
+(function(){
+  const SJ_CDN = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/';
+  const EPOXY = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@3.0.1/dist/index.mjs';
+  const DEFAULT_WISP = 'wss://wisp.mercurywork.shop/';
+  const BASE = new URL('./', location.href);
+  const params = new URLSearchParams(location.search);
+  const wisp = params.get('wisp') || DEFAULT_WISP;
+  const embedded = window.parent !== window;
+
+  const statusEl = document.getElementById('status');
+  function showStatus(title, text, retry){
+    document.getElementById('statusTitle').textContent = title;
+    document.getElementById('statusText').textContent = text || '';
+    document.getElementById('statusRetry').style.display = retry ? '' : 'none';
+    statusEl.classList.add('show');
+  }
+  document.getElementById('statusRetry').addEventListener('click', ()=> location.reload());
+
+  function post(msg){
+    if(!embedded) return;
+    msg.tacticsProxy = 1;
+    try{ window.parent.postMessage(msg, '*'); }catch(e){}
+  }
+
+  // Lets the browser UI know this frame (re)started, so it queues commands until 'ready'.
+  post({ event: 'booting' });
+
+  function safeStore(k, v){
+    try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){}
+    return null;
+  }
+
+  let scramjet = null;
+  let sjFrame = null;
+  let view = null;
+  let ready = false;
+  const queue = [];
+
+  function toReal(href){
+    if(!href) return '';
+    try{
+      const u = new URL(href, location.href);
+      if(u.origin === location.origin && scramjet && u.pathname.indexOf(scramjet_prefix()) === 0) return scramjet.decodeUrl(u.href);
+      if(u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+    }catch(e){}
+    return '';
+  }
+  function scramjet_prefix(){ return new URL('scramjet/', BASE).pathname; }
+
+  function currentUrl(){
+    try{ const u = sjFrame.url; if(u && u.href) return u.href; }catch(e){}
+    try{ return toReal(view.contentWindow.location.href); }catch(e){}
+    return '';
+  }
+
+  /* ---------- State reporting ---------- */
+  let last = {};
+  let loading = false;
+  function report(force){
+    if(!view) return;
+    let title = '', canBack = null, canForward = null;
+    const url = currentUrl();
+    try{ const d = view.contentDocument; if(d) title = d.title || ''; }catch(e){}
+    try{
+      const nav = view.contentWindow.navigation;
+      if(nav && typeof nav.canGoBack === 'boolean'){ canBack = nav.canGoBack; canForward = nav.canGoForward; }
+    }catch(e){}
+    const state = { url, title, canBack, canForward, loading };
+    if(!force && JSON.stringify(state) === JSON.stringify(last)) return;
+    last = state;
+    post(Object.assign({ event: 'state' }, state));
+    if(!embedded && title) document.title = title;
+  }
+
+  /* ---------- Favicon (fetched through the proxied page so it goes via Scramjet) ---------- */
+  let lastFavFor = '';
+  async function sendFavicon(){
+    let win, doc, pageUrl = currentUrl();
+    try{ win = view.contentWindow; doc = view.contentDocument; }catch(e){ return; }
+    if(!win || !doc || !pageUrl || pageUrl === lastFavFor) return;
+    lastFavFor = pageUrl;
+    let raw = '';
+    try{
+      const link = doc.querySelector('link[rel~="icon" i], link[rel="shortcut icon" i], link[rel="apple-touch-icon" i]');
+      if(link) raw = link.getAttribute('href') || '';
+    }catch(e){}
+    let target = '';
+    try{
+      if(raw && /^data:/i.test(raw)){ post({ event: 'favicon', url: pageUrl, favicon: raw }); return; }
+      target = raw ? (toReal(raw) || new URL(raw, pageUrl).href) : new URL('/favicon.ico', pageUrl).href;
+    }catch(e){ return; }
+    try{
+      const res = await win.fetch(target);
+      if(!res.ok) throw new Error('bad status');
+      const blob = await res.blob();
+      if(!blob.size || blob.size > 300000 || (blob.type && !/^image\//i.test(blob.type))) throw new Error('not an image');
+      const dataUrl = await new Promise((resolve, reject)=>{
+        const fr = new FileReader();
+        fr.onload = ()=> resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(blob);
+      });
+      post({ event: 'favicon', url: pageUrl, favicon: dataUrl });
+    }catch(e){
+      post({ event: 'favicon', url: pageUrl, favicon: '' });
+    }
+  }
+
+  /* ---------- Hooks inside each proxied page ---------- */
+  function hookPage(){
+    let win, doc;
+    try{ win = view.contentWindow; doc = view.contentDocument; }catch(e){ return; }
+    if(!win || !doc || win.__tacticsHooked) return;
+    try{ win.__tacticsHooked = true; }catch(e){}
+
+    // Links that would open a new window open as a new browser tab instead.
+    const onLink = (e)=>{
+      const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if(!a || e.defaultPrevented) return;
+      const wantsNew = (a.target && a.target !== '_self' && a.target !== '_top' && a.target !== '_parent') || e.ctrlKey || e.metaKey || e.button === 1;
+      if(!wantsNew) return;
+      const real = toReal(a.href);
+      if(!real) return;
+      e.preventDefault(); e.stopPropagation();
+      post({ event: 'newtab', url: real, background: !!(e.ctrlKey || e.metaKey || e.button === 1) });
+    };
+    try{ doc.addEventListener('click', onLink, true); doc.addEventListener('auxclick', onLink, true); }catch(e){}
+
+    // window.open() also becomes a new browser tab.
+    try{
+      const origOpen = win.open;
+      win.open = function(u){
+        try{
+          if(u){
+            const real = toReal(new URL(String(u), currentUrl() || undefined).href);
+            if(real){ post({ event: 'newtab', url: real }); return null; }
+          }
+        }catch(e){}
+        return origOpen.apply(this, arguments);
+      };
+    }catch(e){}
+
+    try{ win.addEventListener('pagehide', ()=>{ loading = true; report(); }); }catch(e){}
+    try{ new MutationObserver(()=> report()).observe(doc.querySelector('title') || doc.head || doc.documentElement, { childList: true, subtree: true, characterData: true }); }catch(e){}
+  }
+
+  /* ---------- Commands from the browser UI ---------- */
+  function run(msg){
+    if(!ready){ queue.push(msg); return; }
+    try{
+      switch(msg.cmd){
+        case 'go':
+          if(msg.url){ loading = true; lastFavFor = ''; sjFrame.go(msg.url); report(); }
+          break;
+        case 'back': view.contentWindow.history.back(); break;
+        case 'forward': view.contentWindow.history.forward(); break;
+        case 'reload': loading = true; report(); view.contentWindow.location.reload(); break;
+        case 'stop': view.contentWindow.stop(); loading = false; report(); break;
+        case 'focus': view.focus(); break;
+        case 'state': report(true); break;
+      }
+    }catch(e){
+      if(msg.cmd === 'reload' || msg.cmd === 'go'){ const u = msg.url || currentUrl(); if(u) sjFrame.go(u); }
+    }
+  }
+  window.addEventListener('message', (e)=>{
+    if(e.source !== window.parent) return;
+    const d = e.data;
+    if(!d || d.tacticsProxy !== 1 || !d.cmd) return;
+    run(d);
+  });
+
+  /* ---------- Boot ---------- */
+  async function boot(){
+    if(!('serviceWorker' in navigator)) throw new Error('Service workers are blocked in this browser window (incognito or a locked-down browser can cause this).');
+    if(typeof $scramjetLoadController !== 'function' || typeof BareMux === 'undefined') throw new Error('Could not load the proxy libraries from jsDelivr.');
+
+    const { ScramjetController } = $scramjetLoadController();
+    scramjet = new ScramjetController({
+      prefix: scramjet_prefix(),
+      files: {
+        wasm: new URL('scramjet.wasm.wasm', BASE).pathname,
+        all: SJ_CDN + 'scramjet.all.js',
+        sync: SJ_CDN + 'scramjet.sync.js'
+      }
+    });
+    await scramjet.init();
+
+    await navigator.serviceWorker.register(new URL('sw.js', BASE).href, { scope: BASE.pathname });
+    await navigator.serviceWorker.ready;
+    if(!navigator.serviceWorker.controller){
+      await new Promise((resolve)=>{
+        navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+        setTimeout(resolve, 5000);
+      });
+    }
+    if(!navigator.serviceWorker.controller){
+      // First visit in some browsers needs one reload before the worker takes control.
+      let tries = 0;
+      try{ tries = Number(sessionStorage.getItem('tactics_sw_reload') || 0); sessionStorage.setItem('tactics_sw_reload', String(tries + 1)); }catch(e){ tries = 9; }
+      if(tries < 2){ location.reload(); return false; }
+      throw new Error('The proxy service worker did not start. Try reloading the tab.');
+    }
+    try{ sessionStorage.removeItem('tactics_sw_reload'); }catch(e){}
+
+    const conn = new BareMux.BareMuxConnection(new URL('baremux-worker.js', BASE).href);
+    let cur = '';
+    try{ cur = await conn.getTransport(); }catch(e){}
+    if(cur !== EPOXY || safeStore('tactics_proxy_wisp') !== wisp){
+      await conn.setTransport(EPOXY, [{ wisp }]);
+      safeStore('tactics_proxy_wisp', wisp);
+    }
+
+    sjFrame = scramjet.createFrame();
+    view = sjFrame.frame;
+    view.setAttribute('allow', 'autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; microphone; camera; geolocation; gamepad');
+    view.setAttribute('allowfullscreen', '');
+    document.body.appendChild(view);
+    sjFrame.addEventListener('urlchange', ()=> report());
+    view.addEventListener('load', ()=>{
+      loading = false;
+      hookPage();
+      report(true);
+      sendFavicon();
+    });
+    return true;
+  }
+
+  boot().then((ok)=>{
+    if(!ok) return;
+    ready = true;
+    statusEl.classList.remove('show');
+    const initial = decodeURIComponent(location.hash.slice(1) || '');
+    if(initial) run({ cmd: 'go', url: initial });
+    while(queue.length) run(queue.shift());
+    post({ event: 'ready' });
+    setInterval(report, 600);
+  }).catch((err)=>{
+    const msg = (err && err.message) ? err.message : String(err);
+    showStatus('The proxy could not start', msg, true);
+    post({ event: 'error', message: msg });
+  });
+})();
+</script>
+</body>
+</html>
