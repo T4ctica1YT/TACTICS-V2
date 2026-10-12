@@ -4,6 +4,121 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>TACTICS - V2 (Beta)</title>
+<script>
+/* ---------- Isolated game tab ----------
+   Games that need cross-origin isolation (SharedArrayBuffer etc.) are opened by the site in a new
+   tab at this same page with ?tacticsRun=<id>. That tab skips the site entirely and:
+   1. registers coi-sw.js (next to this HTML) and receives the game's HTML from the site tab,
+   2. stores it in IndexedDB and reloads itself with ?coi, which coi-sw.js serves with
+      Cross-Origin-Opener-Policy / Cross-Origin-Embedder-Policy headers,
+   3. writes the game into the now-isolated page. */
+(function(){
+  const params = new URLSearchParams(location.search);
+  const id = params.get('tacticsRun');
+  if(!id) return;
+  window.__tacticsRunner = true;
+  // Turn the rest of this file into inert hidden text so the site's own scripts never run here.
+  // (window.stop() can't be used: it makes the later document.open() calls do nothing.)
+  document.write('<plaintext style="display:none">');
+  const title = (params.get('title') || 'Game').slice(0, 120);
+  const isolatedLoad = params.has('coi');
+  const isSafari = /Safari\//.test(navigator.userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR|Firefox|FxiOS)\//.test(navigator.userAgent);
+  const DB = 'tactics-runner', STORE = 'games', KEEP_MS = 24 * 60 * 60 * 1000;
+
+  function openDb(){
+    return new Promise((resolve, reject)=>{
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = ()=> r.result.createObjectStore(STORE);
+      r.onsuccess = ()=> resolve(r.result);
+      r.onerror = ()=> reject(r.error);
+    });
+  }
+  async function dbDo(mode, fn){
+    const db = await openDb();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction(STORE, mode);
+      const out = fn(tx.objectStore(STORE));
+      tx.oncomplete = ()=>{ db.close(); resolve(out && 'result' in out ? out.result : undefined); };
+      tx.onerror = ()=>{ db.close(); reject(tx.error); };
+    });
+  }
+  async function saveGame(game){
+    // Drop games older than a day so the database doesn't grow forever.
+    await dbDo('readwrite', (st)=>{
+      const cur = st.openCursor();
+      cur.onsuccess = ()=>{ const c = cur.result; if(!c) return; if(!c.value || Date.now() - c.value.at > KEEP_MS) c.delete(); c.continue(); };
+    });
+    await dbDo('readwrite', (st)=> st.put(game, id));
+  }
+  function loadGame(){ return dbDo('readonly', (st)=> st.get(id)); }
+
+  function esc(t){ return String(t).replace(/[&<>"]/g, (c)=> ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+  function show(msg){
+    document.open();
+    document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title></head>' +
+      '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#07101a;color:#e6eef6;font:600 15px system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box">' +
+      '<div style="max-width:520px;line-height:1.5">' + msg + '</div></body></html>');
+    document.close();
+  }
+  function goIsolated(){
+    const u = new URL(location.href);
+    u.searchParams.set('coi', '1');
+    u.searchParams.set('coep', isSafari ? 'require-corp' : 'credentialless');
+    location.replace(u.href);
+  }
+
+  async function run(){
+    show('Starting ' + esc(title) + '...');
+    if(!('serviceWorker' in navigator) || !window.indexedDB){
+      show('This browser has service workers or storage turned off, so this game can\'t be isolated here.');
+      return;
+    }
+    try{
+      await navigator.serviceWorker.register(new URL('coi-sw.js', location.href).href);
+      await navigator.serviceWorker.ready;
+    }catch(e){
+      show('Could not start the game\'s service worker (coi-sw.js).<br><small style="opacity:.7">' + esc(e.message || e) + '</small>');
+      return;
+    }
+
+    if(!isolatedLoad){
+      // Step 1: get the game from the TACTICS tab that opened this one.
+      let existing = null;
+      try{ existing = await loadGame(); }catch(e){}
+      if(existing){ goIsolated(); return; }
+      if(!window.opener){ show('This game tab lost its connection to TACTICS. Close it and press Play again.'); return; }
+      window.addEventListener('message', async (e)=>{
+        const d = e.data;
+        if(e.source !== window.opener || e.origin !== location.origin || !d || d.tacticsRunner !== 'game' || d.id !== id) return;
+        try{
+          await saveGame({ html: String(d.html || ''), title: d.title || title, at: Date.now() });
+          goIsolated();
+        }catch(err){ show('Could not store the game: ' + esc(err.message || err)); }
+      });
+      window.opener.postMessage({ tacticsRunner: 'ready', id }, location.origin);
+      return;
+    }
+
+    // Step 2: this load went through coi-sw.js. On the very first visit the worker may not have
+    // been in control yet, so reload once through it.
+    if(!window.crossOriginIsolated){
+      const key = 'tactics-coi-reload-' + id;
+      let tried = false;
+      try{ tried = sessionStorage.getItem(key) === '1'; sessionStorage.setItem(key, '1'); }catch(e){ tried = true; }
+      if(!tried){ location.reload(); return; }
+      console.warn('TACTICS: this browser did not isolate the game tab; starting the game anyway.');
+    }
+    let game = null;
+    try{ game = await loadGame(); }catch(e){}
+    if(!game || !game.html){ show('This game couldn\'t be found. Close this tab and press Play again.'); return; }
+    // Step 3: the game replaces this page (keeping the isolation headers).
+    document.open();
+    document.write(game.html);
+    document.close();
+  }
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(run, 0));
+})();
+</script>
 <style>
 :root{
   --bg-top: #07101a;
@@ -1325,6 +1440,7 @@ window.TacticsProxy = (function(){
           <div class="menu" id="gameMenu" role="menu" aria-hidden="true">
             <button id="exitGameBtn" type="button">Exit game</button>
             <button id="openGameNewTab" type="button">Open in new tab</button>
+            <button id="openGameIsolated" type="button" title="For games that need a service worker / SharedArrayBuffer">Open isolated tab</button>
             <button id="swapServerBtn" type="button">Swap Server</button>
             <button id="fullscreenBtn" type="button">Enter fullscreen</button>
           </div>
@@ -2831,6 +2947,16 @@ playBtn.addEventListener('click', async ()=>{
       if(replacementBase){ html = html.split('https://office.bostoncareercounselor.com/').join(replacementBase); _activeGameReplacementBase = replacementBase; }
     }
     html = sanitizeHtml(html);
+    if(gameNeedsIsolation(html, currentOpen)){
+      const choice = await askIsolatedLaunch(currentOpen.name, html);
+      if(choice !== 'here'){
+        restoreGameList();
+        _sessionStart = null; _sessionGameId = null;
+        _activeGameUseServer = false; _activeGameRawHtml = null; _activeGameReplacementBase = null;
+        if(choice === 'tab') showToast('Opened ' + currentOpen.name + ' in its own tab');
+        return;
+      }
+    }
     startGameFromHtml(html);
     const overlay = document.getElementById('gameOverlay');
     overlay.classList.add('show');
@@ -2953,7 +3079,70 @@ function pickServerBase(){
   });
 }
 
+
+/* ---------- Games that need cross-origin isolation ----------
+   Some games (threaded Godot 4 / Unity / Emscripten builds) need SharedArrayBuffer, which only
+   works on a cross-origin isolated page. This site runs inside a frame and can't send the needed
+   headers, so those games open in their own tab, isolated by coi-sw.js (see the runner script
+   at the top of <head>). A game.json entry can force this with "isolated": true. */
+const ISOLATION_HINTS = /coi-serviceworker|crossOriginIsolated|Cross-Origin-(Opener|Embedder)-Policy|new\s+SharedArrayBuffer\s*\(|ENVIRONMENT_IS_PTHREAD/i;
+function gameNeedsIsolation(html, game){
+  if(window.crossOriginIsolated) return false;
+  if(game && game.isolated) return true;
+  return ISOLATION_HINTS.test(String(html || ''));
+}
+
+// Opens the game in its own isolated tab. Must be called from a click (it opens a window).
+function openIsolatedGame(html, title){
+  const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const u = new URL(location.href);
+  u.search = ''; u.hash = '';
+  u.searchParams.set('tacticsRun', id);
+  u.searchParams.set('title', title || 'Game');
+  const w = window.open(u.href, '_blank');
+  if(!w){ showToast('Popup blocked. Allow pop-ups for this site, then try again.', 4000); return false; }
+  const onMsg = (e)=>{
+    const d = e.data;
+    if(e.source !== w || e.origin !== location.origin || !d || d.tacticsRunner !== 'ready' || d.id !== id) return;
+    window.removeEventListener('message', onMsg);
+    w.postMessage({ tacticsRunner: 'game', id, html, title }, location.origin);
+  };
+  window.addEventListener('message', onMsg);
+  setTimeout(()=> window.removeEventListener('message', onMsg), 120000);
+  return true;
+}
+
+// Asks how to start a game that wants isolation. Resolves 'tab' (opened), 'here' or 'cancel'.
+function askIsolatedLaunch(title, html){
+  return new Promise((resolve)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'mv-source-backdrop';
+    wrap.innerHTML = `
+      <div class="mv-source-dialog" role="dialog" aria-modal="true" aria-label="Open game in its own tab">
+        <div class="mv-source-title">Open in its own tab?</div>
+        <div class="mv-source-sub" style="white-space:normal">${escapeHtml(title || 'This game')} needs cross-origin isolation (a service worker) to run, which only works in its own tab.</div>
+        <div class="mv-source-list" style="grid-template-columns:1fr">
+          <button class="mv-source-btn last" type="button" data-act="tab"><b>Open in new tab</b><span>Recommended</span></button>
+          <button class="mv-source-btn" type="button" data-act="here"><b>Play here anyway</b><span>May not load or may run slowly</span></button>
+        </div>
+        <div class="mv-source-foot"><div class="mv-source-note">Allow pop-ups if nothing opens.</div><button class="mv-source-cancel" type="button" data-act="cancel">Cancel</button></div>
+      </div>`;
+    const done = (v)=>{ wrap.remove(); resolve(v); };
+    wrap.addEventListener('click', (e)=>{
+      const b = e.target.closest && e.target.closest('[data-act]');
+      if(!b){ if(e.target === wrap) done('cancel'); return; }
+      const act = b.getAttribute('data-act');
+      if(act === 'tab'){ if(openIsolatedGame(html, title)) done('tab'); }
+      else done(act);
+    });
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-act="tab"]').focus();
+  });
+}
+
+let _activeGameHtml = null;
 function startGameFromHtml(html){
+  _activeGameHtml = html;
   const wrap = document.getElementById('gameFrameWrap');
   wrap.innerHTML = '';
   const ifr = document.createElement('iframe');
@@ -3043,7 +3232,7 @@ function normalizeGame(g){
   let url = String(g.url || '').trim();
   if(!url && g._sourceFile) url = getAssetCdn() + String(g._sourceFile);
   else if(url && !/^https?:\/\//i.test(url)) url = getAssetCdn() + url;
-  return { id: String(id), name: String(name), desc: String(g.description || g.desc || ''), type: String(g.genre || g.type || 'Unknown'), year: String(g.year || ''), system: String(g.system || ''), features: String(g.features || ''), warning: String(g.warning || ''), url: url, thumb: thumb };
+  return { id: String(id), name: String(name), desc: String(g.description || g.desc || ''), type: String(g.genre || g.type || 'Unknown'), year: String(g.year || ''), system: String(g.system || ''), features: String(g.features || ''), warning: String(g.warning || ''), url: url, thumb: thumb, isolated: !!(g.isolated || g.coi) };
 }
 
 function salvageGameData(text){
@@ -3464,6 +3653,11 @@ overlayRefreshBtn?.addEventListener('click', ()=> {
 
 gameMenuBtn?.addEventListener('click', ()=> toggleMenu(gameMenu));
 exitGameBtn?.addEventListener('click', ()=> { toggleMenu(gameMenu); closeInjectedGame(); });
+document.getElementById('openGameIsolated')?.addEventListener('click', ()=>{
+  toggleMenu(gameMenu);
+  if(!_activeGameHtml){ showToast('No game running'); return; }
+  if(openIsolatedGame(_activeGameHtml, currentOpen ? currentOpen.name : 'Game')) showToast('Opened in an isolated tab');
+});
 openGameNewTab?.addEventListener('click', async ()=> {
   toggleMenu(gameMenu);
   if(!currentOpen || !currentOpen.url){ showToast('No playable URL available'); return; }
