@@ -9,7 +9,7 @@
   One of these is loaded per browser tab in the Proxy tab of the site. It registers the
   Scramjet service worker (sw.js), sets up the Wisp transport and shows the proxied page.
   It talks to the browser UI with postMessage. This file must be hosted on the same origin
-  as sw.js and baremux-worker.js (GitHub Pages); every library comes from jsDelivr.
+  as sw.js and baremux-worker.js (https://prox.site.je/Proxy/); every library comes from jsDelivr.
 -->
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
@@ -21,6 +21,11 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
 #status p{font-size:14px;color:#9aa0a6;line-height:1.5;margin:0 0 8px;word-break:break-word}
 #status button{margin-top:12px;background:#8ab4f8;color:#202124;border:0;border-radius:18px;padding:8px 18px;font-weight:600;cursor:pointer}
 </style>
+<script>
+  // Sent before the libraries below load, so the browser UI knows the page got past the host's
+  // anti-bot check (and queues commands until 'ready').
+  try{ if(window.parent !== window) window.parent.postMessage({ tacticsProxy: 1, event: 'booting' }, '*'); }catch(e){}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.all.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@2.1.9/dist/index.js"></script>
 </head>
@@ -29,11 +34,14 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
 <script>
 (function(){
   const SJ_CDN = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/';
-  const EPOXY = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@3.0.1/dist/index.mjs';
+  const EPOXY = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs';
   const DEFAULT_WISP = 'wss://wisp.mercurywork.shop/';
   const BASE = new URL('./', location.href);
   const params = new URLSearchParams(location.search);
   const wisp = params.get('wisp') || DEFAULT_WISP;
+  // mode: '' = browser tab, 'player' = movie source (video controls, popups blocked),
+  //       'fetch' = hidden frame that only fetches URLs for the site (no page shown).
+  const mode = params.get('mode') || '';
   const embedded = window.parent !== window;
 
   const statusEl = document.getElementById('status');
@@ -45,25 +53,34 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
   }
   document.getElementById('statusRetry').addEventListener('click', ()=> location.reload());
 
+  // The host sits behind an anti-bot check that sets a "__test" cookie. Browsers only send it
+  // inside frames on other sites (like the TACTICS Proxy tab) if it is SameSite=None, so re-save it.
+  try{
+    const m = document.cookie.match(/(?:^|;\s*)__test=([^;]+)/);
+    if(m) document.cookie = '__test=' + m[1] + '; max-age=31536000; path=/; SameSite=None; Secure';
+  }catch(e){}
+
+  // ?activate: opened in its own window by the Proxy tab only to pass the check above, then closes.
+  if(params.has('activate')){
+    showStatus('Proxy activated', 'You can close this window and go back to TACTICS.', false);
+    try{ if(window.opener) window.opener.postMessage({ tacticsProxy: 1, event: 'activated' }, '*'); }catch(e){}
+    setTimeout(()=>{ try{ window.close(); }catch(e){} }, 500);
+    return;
+  }
+
   function post(msg){
     if(!embedded) return;
     msg.tacticsProxy = 1;
     try{ window.parent.postMessage(msg, '*'); }catch(e){}
   }
 
-  // Lets the browser UI know this frame (re)started, so it queues commands until 'ready'.
-  post({ event: 'booting' });
-
-  function safeStore(k, v){
-    try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){}
-    return null;
-  }
-
   let scramjet = null;
   let sjFrame = null;
   let view = null;
+  let bareClient = null;
   let ready = false;
   const queue = [];
+  const workerUrl = new URL('baremux-worker.js?wisp=' + encodeURIComponent(wisp), BASE).href;
 
   function toReal(href){
     if(!href) return '';
@@ -173,11 +190,86 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     try{ new MutationObserver(()=> report()).observe(doc.querySelector('title') || doc.head || doc.documentElement, { childList: true, subtree: true, characterData: true }); }catch(e){}
   }
 
+  /* ---------- fetch mode: fetch a URL for the site, straight over Wisp (no CORS) ---------- */
+  async function doFetch(msg){
+    try{
+      if(!bareClient) throw new Error('Proxy fetch is not available in this frame');
+      const init = { method: msg.method || 'GET', headers: msg.headers || {}, redirect: 'follow' };
+      if(msg.body !== undefined && init.method !== 'GET' && init.method !== 'HEAD') init.body = msg.body;
+      const res = await bareClient.fetch(msg.url, init);
+      const body = await res.arrayBuffer();
+      const headers = [];
+      try{ res.headers.forEach((v, k)=> headers.push([k, v])); }catch(e){}
+      window.parent.postMessage({ tacticsProxy: 1, event: 'fetchResult', id: msg.id, status: res.status, statusText: res.statusText,
+                                  headers, finalUrl: res.finalURL || msg.url, body }, '*', [body]);
+    }catch(e){
+      post({ event: 'fetchResult', id: msg.id, error: (e && e.message) || String(e) });
+    }
+  }
+
+  /* ---------- player mode: drive the <video> inside the (proxied, same-origin) embed ---------- */
+  // Embed players nest their video a few frames deep; through the proxy every frame is on this
+  // origin, so the video can be found and controlled from here. Popups (ads) are blocked too.
+  function eachWindow(win, depth, fn){
+    if(!win || depth > 6) return;
+    let doc;
+    try{ doc = win.document; }catch(e){ return; }
+    if(!doc) return;
+    fn(win, doc);
+    let frames = [];
+    try{ frames = doc.querySelectorAll('iframe, frame'); }catch(e){}
+    frames.forEach(f=>{ try{ eachWindow(f.contentWindow, depth + 1, fn); }catch(e){} });
+  }
+  function findVideo(){
+    let best = null;
+    eachWindow(view && view.contentWindow, 0, (win, doc)=>{
+      try{
+        doc.querySelectorAll('video').forEach(v=>{
+          if(!best || (v.duration || 0) > (best.duration || 0)) best = v;
+        });
+      }catch(e){}
+    });
+    return best;
+  }
+  function blockPopups(){
+    eachWindow(view && view.contentWindow, 0, (win)=>{
+      try{
+        if(win.__tacticsNoPopups) return;
+        win.__tacticsNoPopups = true;
+        win.open = function(){ return null; };
+      }catch(e){}
+    });
+  }
+  let lastMedia = '';
+  function reportMedia(){
+    blockPopups();
+    const v = findVideo();
+    const m = v && isFinite(v.duration) && v.duration > 0
+      ? { has: true, paused: v.paused, t: Math.floor(v.currentTime), d: Math.floor(v.duration) }
+      : { has: false };
+    const key = JSON.stringify(m);
+    if(key === lastMedia) return;
+    lastMedia = key;
+    post(Object.assign({ event: 'media' }, m));
+  }
+  function mediaCmd(msg){
+    const v = findVideo();
+    if(!v) return;
+    try{
+      if(msg.action === 'toggle'){ if(v.paused) v.play().catch(()=>{}); else v.pause(); }
+      else if(msg.action === 'seekBy') v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + Number(msg.value || 0)));
+      else if(msg.action === 'seekTo' && v.duration) v.currentTime = Math.max(0, Math.min(1, Number(msg.value || 0))) * v.duration;
+    }catch(e){}
+    reportMedia();
+  }
+
   /* ---------- Commands from the browser UI ---------- */
   function run(msg){
     if(!ready){ queue.push(msg); return; }
     try{
       switch(msg.cmd){
+        case 'fetch': doFetch(msg); break;
+        case 'media': mediaCmd(msg); break;
         case 'go':
           if(msg.url){ loading = true; lastFavFor = ''; sjFrame.go(msg.url); report(); }
           break;
@@ -201,6 +293,16 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
 
   /* ---------- Boot ---------- */
   async function boot(){
+    if(mode === 'fetch'){
+      // Only needs bare-mux (no service worker or Scramjet): requests go straight over Wisp.
+      if(typeof BareMux === 'undefined') throw new Error('Could not load the proxy libraries from jsDelivr.');
+      const conn = new BareMux.BareMuxConnection(workerUrl);
+      let cur = '';
+      try{ cur = await conn.getTransport(); }catch(e){}
+      if(!cur) await conn.setTransport(EPOXY, [{ wisp }]);
+      bareClient = new BareMux.BareClient(workerUrl);
+      return true;
+    }
     if(!('serviceWorker' in navigator)) throw new Error('Service workers are blocked in this browser window (incognito or a locked-down browser can cause this).');
     if(typeof $scramjetLoadController !== 'function' || typeof BareMux === 'undefined') throw new Error('Could not load the proxy libraries from jsDelivr.');
 
@@ -232,13 +334,12 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     }
     try{ sessionStorage.removeItem('tactics_sw_reload'); }catch(e){}
 
-    const conn = new BareMux.BareMuxConnection(new URL('baremux-worker.js', BASE).href);
+    // baremux-worker.js sets the Wisp transport itself from ?wisp= when it starts (see that file),
+    // so every copy of the worker the service worker ends up talking to is ready to use.
+    const conn = new BareMux.BareMuxConnection(workerUrl);
     let cur = '';
     try{ cur = await conn.getTransport(); }catch(e){}
-    if(cur !== EPOXY || safeStore('tactics_proxy_wisp') !== wisp){
-      await conn.setTransport(EPOXY, [{ wisp }]);
-      safeStore('tactics_proxy_wisp', wisp);
-    }
+    if(!cur) await conn.setTransport(EPOXY, [{ wisp }]);
 
     sjFrame = scramjet.createFrame();
     view = sjFrame.frame;
@@ -259,11 +360,13 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     if(!ok) return;
     ready = true;
     statusEl.classList.remove('show');
-    const initial = decodeURIComponent(location.hash.slice(1) || '');
+    const initial = params.get('u') || decodeURIComponent(location.hash.slice(1) || '');
     if(initial) run({ cmd: 'go', url: initial });
     while(queue.length) run(queue.shift());
     post({ event: 'ready' });
+    if(mode === 'fetch') return;
     setInterval(report, 600);
+    if(mode === 'player') setInterval(reportMedia, 500);
   }).catch((err)=>{
     const msg = (err && err.message) ? err.message : String(err);
     showStatus('The proxy could not start', msg, true);

@@ -2385,5 +2385,50 @@
     cover: 'SMWR.png',
     description: "A remaster for the classic game Super Mario World, adding new gameplay mechanics, new settings, and local/online multiplayer.",
     features: "Remaster, Singleplayer, Multiplayer"
+  },
+  'geodash.html': {
+    title: 'Geometry Dash',
+    year: '2013',
+    system: 'PC',
+    genre: 'Platformer, Rhythm',
+    cover: 'geodash.jpg',
+    description: "rhythm video game developed by Swedish game developer Robert Topala and published by his company RobTop Games.",
+    features: "Music, Singleplayer, Level editor"
+  },
+  'galaxy.html': {
+    title: 'Super Mario Galaxy',
+    year: '2007',
+    system: 'PC',
+    genre: 'Platformer, Adventure',
+    cover: 'galaxy.png',
+    description: "3D platformer where Mario races across 42 gravity-defying galaxies to rescue Princess Peach from Bowser, collecting Power Stars along the way.",
+    features: "Singleplayer, Multiplayer, 3D platforming, Exploration"
+  },
+  'endacopia.html': {
+    title: 'Endacopia',
+    year: '2026',
+    system: 'PC',
+    genre: 'Adventure',
+    cover: 'endacopia.png',
+    description: "point-and-click puzzle adventure by AndyLand that follows a Guardian Angel protecting a lost child named Mellow through a surreal, horror-tinged journey to find his home.",
+    features: "Singleplayer, Exploration"
+  },
+  'henry.html': {
+    title: 'The Henry Stickmin Collection',
+    year: '2020',
+    system: 'PC',
+    genre: 'Point and Click, Choose Your Own Adventure-like',
+    cover: 'henry.jpg',
+    description: "choose-your-own-path anthology by PuffballsUnited where you guide Henry Stickmin through six missions of heists and escapes, with 347 unique FAIL screens and the 32 endings.",
+    features: "Singleplayer,"
+  },
+  'captcha.html': {
+    title: 'CaptchWare',
+    year: '2026',
+    system: 'PC',
+    genre: 'Quicktime',
+    cover: 'captcha.png',
+    description: "game where you complete captchas in quick succession",
+    features: "Singleplayer,"
   }
 }

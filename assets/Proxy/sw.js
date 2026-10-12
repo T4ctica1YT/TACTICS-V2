@@ -1,7 +1,7 @@
 /* TACTICS - V2 Proxy service worker.
  * Browsers only allow a service worker to be served from the same origin as the
  * page that registers it, so this tiny file (plus frame.html and
- * baremux-worker.js) has to be hosted on a real origin (GitHub Pages).
+ * baremux-worker.js) has to be hosted on a real origin (https://prox.site.je/Proxy/).
  * Everything else is pulled from jsDelivr.
  */
 const SJ_CDN = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/';
@@ -28,7 +28,8 @@ self.addEventListener('activate', (e)=> e.waitUntil(self.clients.claim()));
 async function handleRequest(event){
   await scramjet.loadConfig();
   if(scramjet.route(event)) return scramjet.fetch(event);
-  return nativeFetch(event.request);
+  // Requests outside the proxy (e.g. a blocked cross-site favicon) just fail like normal.
+  return nativeFetch(event.request).catch(()=> Response.error());
 }
 
 self.addEventListener('fetch', (event)=>{
