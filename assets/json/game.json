@@ -35,12 +35,12 @@
     description: "It's 1955, and you're the new doorman. Your job is to check IDs and make sure only real residents get in. But be careful, doppelgangers are on the loose!",
     features: "Simulation, Horror, Deduction gameplay."
   },
-  'ULTRAKILL.html': {
+  'ULTRAKILLNEW.html': {
     title: 'ULTRAKILL',
     year: '2020',
     system: 'PC',
     genre: 'Action, FPS, Indie',
-    cover: 'ultrakill_cover.png',
+    cover: 'ULTRAKILLNEW.jpg',
     description: "A fast-paced ultraviolent retro FPS combining score-based action with raw speed. Rip and tear through hordes of demons and machines.",
     features: "Score-based combat, Fast movement, Retro FPS."
   },
@@ -2411,14 +2411,4 @@
     cover: 'henry.jpg',
     description: "choose-your-own-path anthology by PuffballsUnited where you guide Henry Stickmin through six missions of heists and escapes, with 347 unique FAIL screens and the 32 endings.",
     features: "Singleplayer,"
-  },
-  'captcha.html': {
-    title: 'CaptchWare',
-    year: '2026',
-    system: 'PC',
-    genre: 'Quicktime',
-    cover: 'captcha.png',
-    description: "game where you complete captchas in quick succession",
-    features: "Singleplayer,"
-  }
 }
