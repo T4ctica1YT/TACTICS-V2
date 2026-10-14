@@ -6,19 +6,9 @@
       "link_file": "Kstream.txt",
     },
     {
-      "name": "BasementX",
+      "name": "Aether",
       "id": "srv-001",
-      "link_file": "BasementX.txt",
-    },
-    {
-      "name": "Popcorn Movies",
-      "id": "srv-002",
-      "link_file": "PopcornMovies.txt",
-    },
-    {
-      "name": "AfterStream",
-      "id": "srv-003",
-      "link_file": "AfterStream.txt",
+      "link_file": "Aether.txt",
     }
   ]
 }
