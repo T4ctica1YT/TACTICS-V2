@@ -1,0 +1,16 @@
+{
+  // Deploys over the existing "prox" worker (prox.t4ctica1yt.workers.dev).
+  "name": "prox",
+  "main": "index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "../Proxy",
+    "binding": "ASSETS",
+    // Only send /wisp to the worker; everything else is served straight from ../Proxy.
+    "run_worker_first": ["/wisp", "/wisp/"]
+  },
+  "vars": {
+    // Public Wisp server the /wisp/ relay forwards to.
+    "WISP_UPSTREAM": "wss://wisp.mercurywork.shop/"
+  }
+}

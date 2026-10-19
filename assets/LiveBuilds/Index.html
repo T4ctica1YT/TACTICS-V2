@@ -1168,8 +1168,11 @@ window.TacticsProxy = (function(){
     sitej:      { name: 'prox.site.je', url: 'https://prox.site.je/Proxy/', check: true }
   };
   const DEFAULT_HOST_CHOICE = 'cloudflare';
-  const DEFAULT_WISP = 'wss://wisp.mercurywork.shop/';
-  const LS = { engine: 'gamesHub_proxyEngine', wisp: 'gamesHub_proxyWisp', host: 'gamesHub_proxyHost', hostChoice: 'gamesHub_proxyHostChoice', tabs: 'gamesHub_proxyTabs' };
+  const LS = { engine: 'gamesHub_proxyEngine', wisp: 'gamesHub_proxyWisp', host: 'gamesHub_proxyHost', hostChoice: 'gamesHub_proxyHostChoice', tabs: 'gamesHub_proxyTabs',
+               backend: 'gamesHub_proxyBackend', transport: 'gamesHub_proxyTransport' };
+  // Proxy engines frame.html can run (Settings -> Proxy -> Proxy Engine) and Wisp transports.
+  const PROXY_ENGINES = { sj2: 'Scramjet 2', sj: 'Scramjet 1', uv: 'Ultraviolet', is: 'Interstellar' };
+  const PROXY_TRANSPORTS = { epoxy: 'Epoxy', libcurl: 'libcurl' };
   const FETCH_BOOT_TIMEOUT = 15000;
   const FETCH_TIMEOUT = 30000;
 
@@ -1193,10 +1196,16 @@ window.TacticsProxy = (function(){
   // Custom hosts might have a bot check too, so they get the Activate step.
   function hostHasCheck(){ const c = hostChoice(); return c === 'custom' || PROXY_HOSTS[c].check; }
   function hostOrigin(){ try{ return new URL(proxyHost()).origin; }catch(e){ return ''; } }
-  function wispUrl(){ return (lsGet(LS.wisp) || '').trim() || DEFAULT_WISP; }
+  // '' = automatic: frame.html tries the proxy host's own Wisp relay first, then the public server.
+  function wispUrl(){ return (lsGet(LS.wisp) || '').trim(); }
+  // Scramjet 2 (the newest Scramjet) is the default engine.
+  function proxyBackend(){ const v = lsGet(LS.backend); return PROXY_ENGINES[v] ? v : 'sj2'; }
+  function proxyTransport(){ const v = lsGet(LS.transport); return PROXY_TRANSPORTS[v] ? v : 'epoxy'; }
   // The URL goes in the query (not the hash) so it survives a host's anti-bot redirect.
   function frameSrc(url, mode){
-    return proxyHost() + 'frame.html?wisp=' + encodeURIComponent(wispUrl()) + (mode ? '&mode=' + mode : '') + (url ? '&u=' + encodeURIComponent(url) : '');
+    const wisp = wispUrl();
+    return proxyHost() + 'frame.html?engine=' + proxyBackend() + '&transport=' + proxyTransport() + '&' +
+      (wisp ? 'wisp=' + encodeURIComponent(wisp) + '&' : '') + (mode ? 'mode=' + mode + '&' : '') + (url ? 'u=' + encodeURIComponent(url) : '');
   }
 
   /* ---------- fetch through the proxy ---------- */
@@ -1205,7 +1214,7 @@ window.TacticsProxy = (function(){
   let nextId = 1;
 
   function ensureFetcher(){
-    const key = proxyHost() + '|' + wispUrl();
+    const key = proxyHost() + '|' + wispUrl() + '|' + proxyTransport();
     if(fetcher && fetcher.key === key && !fetcher.failed) return fetcher.ready;
     if(fetcher) fetcher.frame.remove();
     const f = document.createElement('iframe');
@@ -1274,8 +1283,8 @@ window.TacticsProxy = (function(){
     }
   }
 
-  return { PROXY_HOSTS, DEFAULT_HOST_CHOICE, LS, lsGet, lsSet, normHost, hostChoice, proxyHost, hostHasCheck,
-           hostOrigin, wispUrl, frameSrc, fetch: proxyFetch, fetchAny };
+  return { PROXY_HOSTS, DEFAULT_HOST_CHOICE, LS, PROXY_ENGINES, PROXY_TRANSPORTS, lsGet, lsSet, normHost, hostChoice, proxyHost, hostHasCheck,
+           hostOrigin, wispUrl, proxyBackend, proxyTransport, frameSrc, fetch: proxyFetch, fetchAny };
 })();
 </script>
 </head>
@@ -1382,7 +1391,19 @@ window.TacticsProxy = (function(){
             </div>
           </div>
           <div class="settings-section" id="proxySettingsSection" style="display:none">
-            <div class="settings-label">Search Engine</div>
+            <div class="settings-label">Proxy Engine</div>
+            <select id="proxyBackendSelect" aria-label="Proxy engine">
+              <option value="sj2">Scramjet 2</option>
+              <option value="sj">Scramjet 1</option>
+              <option value="uv">Ultraviolet</option>
+              <option value="is">Interstellar</option>
+            </select>
+            <div class="settings-label" style="margin-top:6px">Transport</div>
+            <select id="proxyTransportSelect" aria-label="Proxy transport">
+              <option value="epoxy">Epoxy</option>
+              <option value="libcurl">libcurl</option>
+            </select>
+            <div class="settings-label" style="margin-top:6px">Search Engine</div>
             <select id="proxyEngineSelect" aria-label="Proxy search engine">
               <option value="google">Google</option>
               <option value="duckduckgo">DuckDuckGo</option>
@@ -1390,7 +1411,7 @@ window.TacticsProxy = (function(){
               <option value="brave">Brave</option>
             </select>
             <div class="settings-label" style="margin-top:6px">Wisp Server</div>
-            <input id="proxyWispInput" type="text" spellcheck="false" placeholder="wss://wisp.mercurywork.shop/" style="background:transparent;border:1px solid rgba(255,255,255,0.08);padding:8px;border-radius:8px;color:inherit;font-size:12px">
+            <input id="proxyWispInput" type="text" spellcheck="false" placeholder="Automatic (blank)" style="background:transparent;border:1px solid rgba(255,255,255,0.08);padding:8px;border-radius:8px;color:inherit;font-size:12px">
             <div class="settings-label" style="margin-top:6px">Default Proxy Host</div>
             <select id="proxyHostSelect" aria-label="Default proxy host">
               <option value="cloudflare">Cloudflare (recommended)</option>
@@ -5142,6 +5163,8 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
 
   /* ---------- Settings panel ---------- */
   function fillSettings(){
+    $('proxyBackendSelect').value = window.TacticsProxy.proxyBackend();
+    $('proxyTransportSelect').value = window.TacticsProxy.proxyTransport();
     engineSelect.value = ENGINES[lsGet(LS.engine)] ? lsGet(LS.engine) : 'google';
     wispInput.value = lsGet(LS.wisp) || '';
     hostSelect.value = hostChoice();
@@ -5171,6 +5194,8 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
     if(wisp && !/^wss?:\/\//i.test(wisp)){ showToast('Wisp server must start with wss:// or ws://'); return; }
     if(choice === 'custom' && !/^https?:\/\//i.test(host)){ showToast('Custom proxy host must start with https://'); return; }
     lsSet(LS.wisp, wisp);
+    lsSet(LS.backend, $('proxyBackendSelect').value);
+    lsSet(LS.transport, $('proxyTransportSelect').value);
     lsSet(LS.hostChoice, choice);
     lsSet(LS.host, choice === 'custom' ? host : '');
     reloadAllTabs();

@@ -26,19 +26,41 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
   // anti-bot check (and queues commands until 'ready').
   try{ if(window.parent !== window) window.parent.postMessage({ tacticsProxy: 1, event: 'booting' }, '*'); }catch(e){}
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/scramjet.all.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@2.1.9/dist/index.js"></script>
 </head>
 <body>
 <div id="status"><div class="box"><h1 id="statusTitle">Starting proxy...</h1><p id="statusText"></p><button id="statusRetry" style="display:none">Try again</button></div></div>
 <script>
 (function(){
-  const SJ_CDN = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/scramjet@1.1.0/dist/';
-  const EPOXY = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs';
-  const DEFAULT_WISP = 'wss://wisp.mercurywork.shop/';
+  /* ---------- Proxy engines (all from jsDelivr) ----------
+     sj  = Scramjet 1.1          (bare-mux + Epoxy/libcurl, prefix scramjet/)
+     sj2 = Scramjet 2            (scramjet-controller, its own Epoxy 3 / libcurl 2 transport, prefix ~/sj/)
+     uv  = Ultraviolet 3.2       (bare-mux + Epoxy/libcurl, prefix service/)
+     is  = Interstellar's setup  (Ultraviolet with Interstellar's config, prefix uv/)
+     sw.js (same folder) handles all four prefixes. */
+  const NPM = 'https://cdn.jsdelivr.net/npm/';
+  const SJ_CDN = NPM + '@mercuryworkshop/scramjet@1.1.0/dist/';
+  const SJ2_CDN = NPM + '@mercuryworkshop/scramjet@2.0.67-alpha.2/dist/';
+  const SJ2_CONTROLLER_CDN = NPM + '@mercuryworkshop/scramjet-controller@0.0.14/dist/';
+  const BAREMUX_JS = NPM + '@mercuryworkshop/bare-mux@2.1.9/dist/index.js';
+  // Transports: bare-mux engines use Epoxy 2 / libcurl 1, Scramjet 2 uses Epoxy 3 / libcurl 2.
+  const TRANSPORTS = {
+    epoxy:   { baremux: NPM + '@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs',
+               sj2: NPM + '@mercuryworkshop/epoxy-transport@3.0.1/dist/index.js', sj2Global: 'EpoxyTransport', sj2Class: 'default' },
+    libcurl: { baremux: NPM + '@mercuryworkshop/libcurl-transport@1.5.2/dist/index.mjs',
+               sj2: NPM + '@mercuryworkshop/libcurl-transport@2.0.5/dist/index.js', sj2Global: 'LibcurlTransport', sj2Class: 'default' }
+  };
+  // Wisp server used when none is set in the site's settings. The relay on this host
+  // (assets/ProxyWorker, wss://<this host>/wisp/) is tried first: it forwards to the public server
+  // through the proxy host, which helps on networks that block the public server directly.
+  const PUBLIC_WISP = 'wss://wisp.mercurywork.shop/';
+  const WISP_CACHE_KEY = 'tactics_wisp_ok';
+  const WISP_CACHE_MS = 10 * 60 * 1000;
   const BASE = new URL('./', location.href);
   const params = new URLSearchParams(location.search);
-  const wisp = params.get('wisp') || DEFAULT_WISP;
+  const engine = ['sj', 'sj2', 'uv', 'is'].includes(params.get('engine')) ? params.get('engine') : 'sj2';
+  const transport = params.get('transport') === 'libcurl' ? 'libcurl' : 'epoxy';
+  const askedWisp = (params.get('wisp') || '').trim();
+  let wisp = '';
   // mode: '' = browser tab, 'player' = movie source (video controls, popups blocked),
   //       'fetch' = hidden frame that only fetches URLs for the site (no page shown).
   const mode = params.get('mode') || '';
@@ -74,27 +96,119 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     try{ window.parent.postMessage(msg, '*'); }catch(e){}
   }
 
-  let scramjet = null;
-  let sjFrame = null;
+  let scramjet = null;     // Scramjet 1.1 controller
+  let sjFrame = null;      // Scramjet 1.1 frame
+  let sj2Frame = null;     // Scramjet 2 frame
   let view = null;
   let bareClient = null;
   let ready = false;
   const queue = [];
-  const workerUrl = new URL('baremux-worker.js?wisp=' + encodeURIComponent(wisp), BASE).href;
+  const workerUrl = ()=> new URL('baremux-worker.js?wisp=' + encodeURIComponent(wisp) + '&transport=' + transport, BASE).href;
+
+  function loadScript(src){
+    return new Promise((resolve, reject)=>{
+      const sc = document.createElement('script');
+      sc.src = src;
+      sc.onload = ()=> resolve();
+      sc.onerror = ()=> reject(new Error('Could not load ' + src.replace(NPM, '') + ' from jsDelivr.'));
+      document.head.appendChild(sc);
+    });
+  }
+
+  // Ultraviolet's "xor" URL codec (same as Ultraviolet.codec.xor), used by Ultraviolet and Interstellar.
+  const uvXor = {
+    encode(str){
+      if(!str) return str;
+      return encodeURIComponent(String(str).split('').map((ch, i)=> i % 2 ? String.fromCharCode(ch.charCodeAt(0) ^ 2) : ch).join(''));
+    },
+    decode(str){
+      if(!str) return str;
+      const [input, ...search] = String(str).split('?');
+      return decodeURIComponent(input).split('').map((ch, i)=> i % 2 ? String.fromCharCode(ch.charCodeAt(0) ^ 2) : ch).join('') +
+             (search.length ? '?' + search.join('?') : '');
+    }
+  };
+  const UV_PREFIX = ()=> new URL('service/', BASE).pathname;
+  const IS_PREFIX = ()=> new URL('uv/', BASE).pathname;
+  const SJ2_PREFIX = ()=> new URL('~/sj/', BASE).pathname;
+
+  /* ---------- Choosing a Wisp server ---------- */
+  // A server counts as reachable once it sends its first Wisp packet (CONTINUE) over the socket.
+  function probeWisp(url, ms){
+    return new Promise((resolve)=>{
+      let ws, done = false;
+      const finish = (ok)=>{ if(done) return; done = true; try{ ws.close(); }catch(e){} resolve(ok); };
+      try{ ws = new WebSocket(url); }catch(e){ resolve(false); return; }
+      ws.binaryType = 'arraybuffer';
+      ws.onmessage = ()=> finish(true);
+      ws.onerror = ()=> finish(false);
+      ws.onclose = ()=> finish(false);
+      setTimeout(()=> finish(false), ms);
+    });
+  }
+  // A Wisp server passed in (?wisp=, from Settings or an older copy of the site) is tried first,
+  // but if it can't be reached the relay and the public server are still tried.
+  async function pickWisp(){
+    const asked = askedWisp && askedWisp !== 'auto' ? askedWisp : '';
+    try{
+      const c = JSON.parse(localStorage.getItem(WISP_CACHE_KEY) || 'null');
+      if(c && c.url && c.asked === asked && Date.now() - c.at < WISP_CACHE_MS) return c.url;
+    }catch(e){}
+    const relay = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/wisp/';
+    const list = [...new Set([asked, relay, PUBLIC_WISP].filter(Boolean))];
+    const checks = list.map(u => probeWisp(u, 6000));
+    for(let i = 0; i < list.length; i++){
+      if(await checks[i]){
+        try{ localStorage.setItem(WISP_CACHE_KEY, JSON.stringify({ url: list[i], asked, at: Date.now() })); }catch(e){}
+        return list[i];
+      }
+    }
+    throw new Error('Could not reach a Wisp server (' + list.join(' or ') + '). This device or network is probably blocking it. ' +
+                    'Try another Wisp Server in Settings -> Proxy, or another network.');
+  }
 
   function toReal(href){
     if(!href) return '';
     try{
       const u = new URL(href, location.href);
-      if(u.origin === location.origin && scramjet && u.pathname.indexOf(scramjet_prefix()) === 0) return scramjet.decodeUrl(u.href);
+      if(u.origin === location.origin){
+        const real = decodeProxied(u);
+        if(real) return real;
+      }
       if(u.protocol === 'http:' || u.protocol === 'https:') return u.href;
     }catch(e){}
     return '';
   }
   function scramjet_prefix(){ return new URL('scramjet/', BASE).pathname; }
 
+  // A proxied URL on this host -> the real URL it shows ('' if it isn't one).
+  function decodeProxied(u){
+    const path = u.pathname, rest = u.href.slice(u.origin.length);
+    try{
+      if(scramjet && path.indexOf(scramjet_prefix()) === 0) return scramjet.decodeUrl(u.href);
+      if(path.indexOf(UV_PREFIX()) === 0) return uvXor.decode(rest.slice(UV_PREFIX().length));
+      if(path.indexOf(IS_PREFIX()) === 0) return uvXor.decode(rest.slice(IS_PREFIX().length));
+      if(path.indexOf(SJ2_PREFIX()) === 0){
+        // ~/sj/<controller id>/<frame id>/<encoded url>
+        const parts = rest.slice(SJ2_PREFIX().length).split('/');
+        const real = new URL(decodeURIComponent(parts.slice(2).join('/')));
+        // Scramjet 2 adds its own $-prefixed query parameters (e.g. $io, $rfs, $csr, $fs) after redirects.
+        [...real.searchParams.keys()].filter(k => k.startsWith('$')).forEach(k => real.searchParams.delete(k));
+        return real.href;
+      }
+    }catch(e){}
+    return '';
+  }
+
+  // Load a real URL in the proxied view with the selected engine.
+  function goTo(url){
+    if(engine === 'sj') sjFrame.go(url);
+    else if(engine === 'sj2') sj2Frame.go(url);
+    else view.src = (engine === 'uv' ? UV_PREFIX() : IS_PREFIX()) + uvXor.encode(url);
+  }
+
   function currentUrl(){
-    try{ const u = sjFrame.url; if(u && u.href) return u.href; }catch(e){}
+    if(engine === 'sj'){ try{ const u = sjFrame.url; if(u && u.href) return u.href; }catch(e){} }
     try{ return toReal(view.contentWindow.location.href); }catch(e){}
     return '';
   }
@@ -271,7 +385,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
         case 'fetch': doFetch(msg); break;
         case 'media': mediaCmd(msg); break;
         case 'go':
-          if(msg.url){ loading = true; lastFavFor = ''; sjFrame.go(msg.url); report(); }
+          if(msg.url){ loading = true; lastFavFor = ''; goTo(msg.url); report(); }
           break;
         case 'back': view.contentWindow.history.back(); break;
         case 'forward': view.contentWindow.history.forward(); break;
@@ -281,7 +395,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
         case 'state': report(true); break;
       }
     }catch(e){
-      if(msg.cmd === 'reload' || msg.cmd === 'go'){ const u = msg.url || currentUrl(); if(u) sjFrame.go(u); }
+      if(msg.cmd === 'reload' || msg.cmd === 'go'){ const u = msg.url || currentUrl(); if(u) goTo(u); }
     }
   }
   window.addEventListener('message', (e)=>{
@@ -292,31 +406,18 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
   });
 
   /* ---------- Boot ---------- */
-  async function boot(){
-    if(mode === 'fetch'){
-      // Only needs bare-mux (no service worker or Scramjet): requests go straight over Wisp.
-      if(typeof BareMux === 'undefined') throw new Error('Could not load the proxy libraries from jsDelivr.');
-      const conn = new BareMux.BareMuxConnection(workerUrl);
-      let cur = '';
-      try{ cur = await conn.getTransport(); }catch(e){}
-      if(!cur) await conn.setTransport(EPOXY, [{ wisp }]);
-      bareClient = new BareMux.BareClient(workerUrl);
-      return true;
-    }
+  // bare-mux connection whose worker (baremux-worker.js) already has the Wisp transport set.
+  async function connectBareMux(){
+    if(typeof BareMux === 'undefined') await loadScript(BAREMUX_JS);
+    const conn = new BareMux.BareMuxConnection(workerUrl());
+    let cur = '';
+    try{ cur = await conn.getTransport(); }catch(e){}
+    if(!cur) await conn.setTransport(TRANSPORTS[transport].baremux, [{ wisp }]);
+    return conn;
+  }
+
+  async function registerServiceWorker(){
     if(!('serviceWorker' in navigator)) throw new Error('Service workers are blocked in this browser window (incognito or a locked-down browser can cause this).');
-    if(typeof $scramjetLoadController !== 'function' || typeof BareMux === 'undefined') throw new Error('Could not load the proxy libraries from jsDelivr.');
-
-    const { ScramjetController } = $scramjetLoadController();
-    scramjet = new ScramjetController({
-      prefix: scramjet_prefix(),
-      files: {
-        wasm: new URL('scramjet.wasm.wasm', BASE).pathname,
-        all: SJ_CDN + 'scramjet.all.js',
-        sync: SJ_CDN + 'scramjet.sync.js'
-      }
-    });
-    await scramjet.init();
-
     await navigator.serviceWorker.register(new URL('sw.js', BASE).href, { scope: BASE.pathname });
     await navigator.serviceWorker.ready;
     if(!navigator.serviceWorker.controller){
@@ -333,26 +434,81 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
       throw new Error('The proxy service worker did not start. Try reloading the tab.');
     }
     try{ sessionStorage.removeItem('tactics_sw_reload'); }catch(e){}
+    return true;
+  }
 
-    // baremux-worker.js sets the Wisp transport itself from ?wisp= when it starts (see that file),
-    // so every copy of the worker the service worker ends up talking to is ready to use.
-    const conn = new BareMux.BareMuxConnection(workerUrl);
-    let cur = '';
-    try{ cur = await conn.getTransport(); }catch(e){}
-    if(!cur) await conn.setTransport(EPOXY, [{ wisp }]);
-
-    sjFrame = scramjet.createFrame();
-    view = sjFrame.frame;
+  function makeView(el){
+    view = el || document.createElement('iframe');
     view.setAttribute('allow', 'autoplay; fullscreen; clipboard-read; clipboard-write; encrypted-media; picture-in-picture; microphone; camera; geolocation; gamepad');
     view.setAttribute('allowfullscreen', '');
-    document.body.appendChild(view);
-    sjFrame.addEventListener('urlchange', ()=> report());
+    if(!view.isConnected) document.body.appendChild(view);
     view.addEventListener('load', ()=>{
       loading = false;
       hookPage();
       report(true);
       sendFavicon();
     });
+  }
+
+  async function boot(){
+    if(mode === 'fetch'){
+      // Only needs bare-mux (no service worker or proxy engine): requests go straight over Wisp.
+      wisp = await pickWisp();
+      await connectBareMux();
+      bareClient = new BareMux.BareClient(workerUrl());
+      return true;
+    }
+
+    if(engine === 'sj'){
+      await loadScript(SJ_CDN + 'scramjet.all.js');
+      const { ScramjetController } = $scramjetLoadController();
+      scramjet = new ScramjetController({
+        prefix: scramjet_prefix(),
+        files: {
+          wasm: new URL('scramjet.wasm.wasm', BASE).pathname,
+          all: SJ_CDN + 'scramjet.all.js',
+          sync: SJ_CDN + 'scramjet.sync.js'
+        }
+      });
+      await scramjet.init();
+    }
+
+    if(!(await registerServiceWorker())) return false;
+    wisp = await pickWisp();
+
+    if(engine === 'sj2'){
+      // Scramjet 2 runs the transport in this page; sw.js forwards requests here.
+      const t = TRANSPORTS[transport];
+      await loadScript(SJ2_CDN + 'scramjet.js');
+      await loadScript(SJ2_CONTROLLER_CDN + 'controller.api.js');
+      await loadScript(t.sj2);
+      const { Controller, config } = window.$scramjetController;
+      config.prefix = SJ2_PREFIX();
+      config.scramjetPath = SJ2_CDN + 'scramjet.js';
+      config.wasmPath = SJ2_CDN + 'scramjet.wasm';
+      config.injectPath = SJ2_CONTROLLER_CDN + 'controller.inject.js';
+      const Transport = window[t.sj2Global][t.sj2Class];
+      const controller = new Controller({ serviceworker: navigator.serviceWorker.controller, transport: new Transport({ wisp }) });
+      await controller.wait();
+      // scramjet-controller 0.0.14 can deadlock when a response sets cookies: the response waits for a
+      // cookie broadcast through the service worker, which is still waiting on that same response.
+      // The cookies are already saved (persistCookies) by then, so let the broadcast run on its own.
+      const syncCookies = controller.propagateCookieSync.bind(controller);
+      controller.propagateCookieSync = (...args)=>{ syncCookies(...args).catch(()=>{}); return Promise.resolve(); };
+      makeView();
+      sj2Frame = controller.createFrame(view);
+      return true;
+    }
+
+    // Scramjet 1.1, Ultraviolet and Interstellar all go through bare-mux.
+    await connectBareMux();
+    if(engine === 'sj'){
+      sjFrame = scramjet.createFrame();
+      makeView(sjFrame.frame);
+      sjFrame.addEventListener('urlchange', ()=> report());
+    } else {
+      makeView();
+    }
     return true;
   }
 
