@@ -5,9 +5,14 @@
       "id": "srv-000",
       "link_file": "Kstream.txt",
     },
+     {
+      "name": "Cinecat",
+      "id": "srv-001",
+      "link_file": "Cinecat.txt",
+    },
     {
       "name": "Aether",
-      "id": "srv-001",
+      "id": "srv-002",
       "link_file": "Aether.txt",
     }
   ]
