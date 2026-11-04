@@ -1015,6 +1015,49 @@ html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-
 .pb-activate-btn{background:var(--accent);color:#021018;border:0;border-radius:18px;padding:9px 22px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .pb-activate-btn:hover{filter:brightness(1.1)}
 .pb-activate-hint:empty{display:none}
+.pb-star{width:26px;height:26px;border:0;border-radius:50%;background:transparent;color:var(--pb-muted);display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0}
+.pb-star:hover:not(:disabled){background:var(--pb-btn-hover);color:var(--pb-text)}
+.pb-star:disabled{opacity:.4;cursor:default}
+.pb-star svg{width:16px;height:16px}
+.pb-star.on{color:var(--accent)}
+.pb-star.on svg path{fill:currentColor}
+.pb-bookmarks{display:none;align-items:center;gap:2px;height:30px;padding:0 8px 4px;background:var(--pb-toolbar);flex-shrink:0;overflow:hidden}
+.pb-bookmarks.active{display:flex}
+.pb-bm{display:flex;align-items:center;gap:6px;max-width:180px;height:26px;padding:0 10px;border:0;border-radius:13px;background:transparent;color:var(--pb-text);font:inherit;font-size:12px;cursor:pointer;flex-shrink:0}
+.pb-bm:hover{background:var(--pb-btn-hover)}
+.pb-bm img,.pb-bm svg{width:14px;height:14px;flex-shrink:0;object-fit:contain}
+.pb-bm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-menu{position:absolute;top:38px;right:8px;z-index:20;min-width:230px;padding:6px 0;background:var(--pb-toolbar);border:1px solid rgba(0,0,0,0.25);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:none}
+.pb-menu.open{display:block}
+.pb-menu button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:8px 16px;border:0;background:transparent;color:var(--pb-text);font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.pb-menu button:hover:not(:disabled){background:var(--pb-btn-hover)}
+.pb-menu button:disabled{color:var(--pb-sep);cursor:default}
+.pb-menu kbd{font:inherit;font-size:11px;color:var(--pb-muted)}
+.pb-menu hr{border:0;border-top:1px solid var(--pb-sep);opacity:.5;margin:6px 0}
+.pb-panel{position:absolute;inset:0;z-index:4;display:none;flex-direction:column;background:var(--pb-ntp);color:var(--pb-text)}
+.pb-panel.active{display:flex}
+.pb-panel-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(127,127,127,0.25);flex-shrink:0}
+.pb-panel-title{font-size:18px;font-weight:700;flex-shrink:0;margin-right:6px}
+.pb-panel-search{flex:1;min-width:0;max-width:420px;display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:17px;background:var(--pb-tile);border:2px solid transparent}
+.pb-panel-search:focus-within{border-color:var(--accent)}
+.pb-panel-search svg{width:16px;height:16px;color:var(--pb-muted);flex-shrink:0}
+.pb-panel-search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--pb-text);font:inherit;font-size:14px}
+.pb-panel-search input::placeholder{color:var(--pb-muted)}
+.pb-panel-btn{margin-left:auto;border:0;border-radius:16px;padding:7px 14px;background:var(--pb-tile);color:var(--pb-text);font:inherit;font-size:13px;cursor:pointer;flex-shrink:0}
+.pb-panel-btn:hover:not(:disabled){background:var(--pb-btn-hover)}
+.pb-panel-btn:disabled{opacity:.5;cursor:default}
+.pb-panel-list{flex:1;overflow:auto;padding:4px 16px 20px}
+.pb-panel-day{font-size:12px;font-weight:700;color:var(--pb-muted);margin:16px 10px 4px;letter-spacing:.3px}
+.pb-row{display:flex;align-items:center;gap:12px;padding:6px 10px;border-radius:8px;cursor:pointer;max-width:860px}
+.pb-row:hover{background:var(--pb-btn-hover)}
+.pb-row-time{font-size:12px;color:var(--pb-muted);width:58px;flex-shrink:0}
+.pb-row-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.pb-row-host{color:var(--pb-muted);font-size:12px;margin-left:8px}
+.pb-row-del{width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:var(--pb-muted);display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0;visibility:hidden}
+.pb-row:hover .pb-row-del{visibility:visible}
+.pb-row-del:hover{background:var(--pb-btn-hover);color:var(--pb-text)}
+.pb-row-del svg{width:10px;height:10px}
+.pb-panel-empty{color:var(--pb-muted);font-size:14px;padding:48px 16px;text-align:center}
 @media (max-width:640px){
   .pb-btn.pb-optional{display:none}
   .pb-tile{width:84px;height:92px}
@@ -1169,10 +1212,10 @@ window.TacticsProxy = (function(){
   };
   const DEFAULT_HOST_CHOICE = 'cloudflare';
   const LS = { engine: 'gamesHub_proxyEngine', wisp: 'gamesHub_proxyWisp', host: 'gamesHub_proxyHost', hostChoice: 'gamesHub_proxyHostChoice', tabs: 'gamesHub_proxyTabs',
-               backend: 'gamesHub_proxyBackend', transport: 'gamesHub_proxyTransport' };
+               backend: 'gamesHub_proxyBackend', transport: 'gamesHub_proxyTransport', adblock: 'gamesHub_proxyAdblock' };
   // Proxy engines frame.html can run (Settings -> Proxy -> Proxy Engine) and Wisp transports.
-  const PROXY_ENGINES = { sj2: 'Scramjet 2', sj: 'Scramjet 1', uv: 'Ultraviolet', is: 'Interstellar' };
-  const PROXY_TRANSPORTS = { epoxy: 'Epoxy', libcurl: 'libcurl' };
+  const PROXY_ENGINES = { t4: 'T4CTIC$', sj2: 'Scramjet 2', sj: 'Scramjet 1', uv: 'Ultraviolet', is: 'Interstellar' };
+  const PROXY_TRANSPORTS = { libcurl: 'libcurl', epoxy: 'Epoxy' };
   const FETCH_BOOT_TIMEOUT = 15000;
   const FETCH_TIMEOUT = 30000;
 
@@ -1198,13 +1241,16 @@ window.TacticsProxy = (function(){
   function hostOrigin(){ try{ return new URL(proxyHost()).origin; }catch(e){ return ''; } }
   // '' = automatic: frame.html tries the proxy host's own Wisp relay first, then the public server.
   function wispUrl(){ return (lsGet(LS.wisp) || '').trim(); }
-  // Scramjet 2 (the newest Scramjet) is the default engine.
-  function proxyBackend(){ const v = lsGet(LS.backend); return PROXY_ENGINES[v] ? v : 'sj2'; }
-  function proxyTransport(){ const v = lsGet(LS.transport); return PROXY_TRANSPORTS[v] ? v : 'epoxy'; }
+  // T4CTIC$ is the default engine and libcurl the default transport: Epoxy can't load pages whose response
+  // headers are over ~16 KB (YouTube and more over time), and only falls back to libcurl for those.
+  function proxyBackend(){ const v = lsGet(LS.backend); return PROXY_ENGINES[v] ? v : 't4'; }
+  // Ad Block (uBlock Origin's filter engine in the proxy's service worker) is on unless turned off.
+  function proxyAdblock(){ return lsGet(LS.adblock) !== '0'; }
+  function proxyTransport(){ const v = lsGet(LS.transport); return PROXY_TRANSPORTS[v] ? v : 'libcurl'; }
   // The URL goes in the query (not the hash) so it survives a host's anti-bot redirect.
   function frameSrc(url, mode){
     const wisp = wispUrl();
-    return proxyHost() + 'frame.html?engine=' + proxyBackend() + '&transport=' + proxyTransport() + '&' +
+    return proxyHost() + 'frame.html?engine=' + proxyBackend() + '&transport=' + proxyTransport() + '&' + (proxyAdblock() ? '' : 'adblock=0&') +
       (wisp ? 'wisp=' + encodeURIComponent(wisp) + '&' : '') + (mode ? 'mode=' + mode + '&' : '') + (url ? 'u=' + encodeURIComponent(url) : '');
   }
 
@@ -1284,7 +1330,7 @@ window.TacticsProxy = (function(){
   }
 
   return { PROXY_HOSTS, DEFAULT_HOST_CHOICE, LS, PROXY_ENGINES, PROXY_TRANSPORTS, lsGet, lsSet, normHost, hostChoice, proxyHost, hostHasCheck,
-           hostOrigin, wispUrl, proxyBackend, proxyTransport, frameSrc, fetch: proxyFetch, fetchAny };
+           hostOrigin, wispUrl, proxyBackend, proxyTransport, proxyAdblock, frameSrc, fetch: proxyFetch, fetchAny };
 })();
 </script>
 </head>
@@ -1393,6 +1439,7 @@ window.TacticsProxy = (function(){
           <div class="settings-section" id="proxySettingsSection" style="display:none">
             <div class="settings-label">Proxy Engine</div>
             <select id="proxyBackendSelect" aria-label="Proxy engine">
+              <option value="t4">T4CTIC$</option>
               <option value="sj2">Scramjet 2</option>
               <option value="sj">Scramjet 1</option>
               <option value="uv">Ultraviolet</option>
@@ -1400,9 +1447,14 @@ window.TacticsProxy = (function(){
             </select>
             <div class="settings-label" style="margin-top:6px">Transport</div>
             <select id="proxyTransportSelect" aria-label="Proxy transport">
-              <option value="epoxy">Epoxy</option>
               <option value="libcurl">libcurl</option>
+              <option value="epoxy">Epoxy</option>
             </select>
+            <div class="settings-label" style="margin-top:6px">Ad Block</div>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input id="proxyAdblockToggle" type="checkbox" checked aria-label="Ad Block">
+              <span style="color:var(--muted);font-size:13px">Block ads and trackers on proxied sites (uBlock Origin filters).</span>
+            </label>
             <div class="settings-label" style="margin-top:6px">Search Engine</div>
             <select id="proxyEngineSelect" aria-label="Proxy search engine">
               <option value="google">Google</option>
@@ -1530,6 +1582,9 @@ window.TacticsProxy = (function(){
       <form class="pb-omni" id="pbOmniForm" autocomplete="off">
         <span class="pb-omni-icon" id="pbOmniIcon"></span>
         <input id="pbOmni" type="text" spellcheck="false" autocapitalize="off" placeholder="Search Google or type a URL" aria-label="Address and search bar">
+        <button type="button" class="pb-star" id="pbStar" title="Bookmark this tab (Ctrl+D)" aria-label="Bookmark this tab" disabled>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </button>
       </form>
       <button class="pb-btn pb-optional" id="pbPopout" title="Open this tab in a new window" aria-label="Open in new window">
         <svg viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1537,8 +1592,22 @@ window.TacticsProxy = (function(){
       <button class="pb-btn" id="pbFullscreen" title="Fullscreen" aria-label="Fullscreen">
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
+      <button class="pb-btn" id="pbMenuBtn" title="Menu" aria-label="Menu" aria-haspopup="menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/></svg>
+      </button>
+      <div class="pb-menu" id="pbMenu" role="menu">
+        <button type="button" role="menuitem" data-act="newtab">New tab <kbd>Alt+T</kbd></button>
+        <hr>
+        <button type="button" role="menuitem" data-act="history">History <kbd>Ctrl+H</kbd></button>
+        <button type="button" role="menuitem" data-act="bookmarks">Bookmarks</button>
+        <button type="button" role="menuitem" data-act="bookmark" id="pbMenuBookmark">Bookmark this tab <kbd>Ctrl+D</kbd></button>
+        <button type="button" role="menuitem" data-act="bar" id="pbMenuBar">Hide bookmarks bar</button>
+        <hr>
+        <button type="button" role="menuitem" data-act="clear">Clear browsing history</button>
+      </div>
       <div class="pb-loadbar" id="pbLoadbar"></div>
     </div>
+    <div class="pb-bookmarks" id="pbBookmarks" aria-label="Bookmarks bar"></div>
     <div class="pb-views" id="pbViews">
       <div class="pb-ntp" id="pbNtp">
         <div class="pb-ntp-logo"><span>T4CTIC$</span></div>
@@ -1547,7 +1616,21 @@ window.TacticsProxy = (function(){
           <input id="pbNtpInput" type="text" spellcheck="false" autocapitalize="off" placeholder="Search Google or type a URL" aria-label="Search or type a URL">
         </form>
         <div class="pb-tiles" id="pbTiles"></div>
-        <div class="pb-ntp-note">Powered by Scramjet. Some sites may not load or may be slow.</div>
+        <div class="pb-ntp-note" id="pbNtpNote">Powered by T4CTIC$. Some sites may not load or may be slow.</div>
+      </div>
+      <div class="pb-panel" id="pbPanel">
+        <div class="pb-panel-head">
+          <div class="pb-panel-title" id="pbPanelTitle">History</div>
+          <label class="pb-panel-search">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/></svg>
+            <input id="pbPanelSearch" type="text" spellcheck="false" autocapitalize="off" placeholder="Search" aria-label="Search">
+          </label>
+          <button type="button" class="pb-panel-btn" id="pbPanelClear">Clear history</button>
+          <button type="button" class="pb-btn" id="pbPanelClose" title="Close" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="pb-panel-list" id="pbPanelList"></div>
       </div>
       <div class="pb-activate" id="pbActivate">
         <div class="pb-activate-box">
@@ -4676,7 +4759,7 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
    The frame and this UI talk with postMessage. */
 (function(){
   // Host settings and helpers are shared with the Movies/Games code (see TacticsProxy in <head>).
-  const { PROXY_HOSTS, DEFAULT_HOST_CHOICE, LS, lsGet, lsSet, hostChoice, proxyHost, hostHasCheck, hostOrigin, wispUrl, frameSrc } = window.TacticsProxy;
+  const { PROXY_HOSTS, DEFAULT_HOST_CHOICE, LS, PROXY_ENGINES, lsGet, lsSet, hostChoice, proxyHost, hostHasCheck, hostOrigin, wispUrl, proxyBackend, frameSrc } = window.TacticsProxy;
   const ENGINES = {
     google:     { name: 'Google',     url: 'https://www.google.com/search?q=' },
     duckduckgo: { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
@@ -4813,6 +4896,7 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
   }
 
   function activate(t){
+    closePanel();
     state.active = t;
     state.tabs.forEach(x=>{
       x.el.classList.toggle('active', x === t);
@@ -4848,6 +4932,7 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
   }
 
   function loadInTab(t, url){
+    if(t === state.active) closePanel();
     t.forwardUrl = ''; t.error = '';
     if(!t.frame){
       const f = document.createElement('iframe');
@@ -4933,9 +5018,12 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
         t.loading = !!d.loading;
         t.canBack = d.canBack; t.canForward = d.canForward;
         t.error = '';
+        // Mid-load states can still carry the old or pre-redirect URL.
+        if(!t.loading) recordVisit(t);
         break;
       case 'favicon':
         t.favicon = d.favicon || '';
+        onFavicon(t);
         break;
       case 'newtab':
         if(d.url) newTab(d.url, { afterActive: true, background: !!d.background });
@@ -4968,6 +5056,7 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
     let icon = ICONS.search;
     if(t.url){ try{ icon = new URL(t.url).protocol === 'https:' ? ICONS.lock : ICONS.info; }catch(e){} }
     omniIcon.innerHTML = icon;
+    updateStar(t);
     loadbar.classList.toggle('on', t.loading);
     if(!t.loading && loadbar.classList.contains('was-on')){
       loadbar.classList.add('done');
@@ -5103,12 +5192,248 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
     const k = e.key.toLowerCase();
     if(e.altKey && !e.ctrlKey && k === 't'){ e.preventDefault(); newTab(); }
     else if(e.altKey && !e.ctrlKey && k === 'w'){ e.preventDefault(); if(state.active) closeTab(state.active); }
+    else if((e.ctrlKey || e.metaKey) && !e.altKey && k === 'd'){ e.preventDefault(); toggleBookmark(); }
+    else if((e.ctrlKey || e.metaKey) && !e.altKey && k === 'h'){ e.preventDefault(); openPanel('history'); }
+    else if(e.key === 'Escape' && (panel.kind || menu.classList.contains('open'))){ closeMenu(); closePanel(); }
     else if(e.key === 'F5' || ((e.ctrlKey || e.metaKey) && k === 'r')){
       if(state.active && state.active.frame){ e.preventDefault(); reloadActive(); }
     }
   });
 
   window.addEventListener('resize', ()=> requestAnimationFrame(updateNarrow));
+
+  /* ---------- Bookmarks & history (saved in this browser, shared by every proxy engine) ---------- */
+  const BM_KEY = 'gamesHub_proxyBookmarks', HIST_KEY = 'gamesHub_proxyHistory', BAR_KEY = 'gamesHub_proxyBookmarkBar';
+  const HIST_MAX = 1000;
+  // Favicons are data: URLs; only small ones are kept so localStorage doesn't fill up.
+  const FAV_MAX = 20000;
+  function readList(key){ try{ const v = JSON.parse(lsGet(key) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+  const bookmarks = readList(BM_KEY), visits = readList(HIST_KEY);
+  let visitsTimer = null;
+  function saveBookmarks(){ lsSet(BM_KEY, JSON.stringify(bookmarks)); }
+  function saveVisits(){
+    clearTimeout(visitsTimer);
+    visitsTimer = setTimeout(()=> lsSet(HIST_KEY, JSON.stringify(visits)), 500);
+  }
+  function barOn(){ return lsGet(BAR_KEY) !== '0'; }
+  function smallFav(f){ return f && f.length <= FAV_MAX ? f : ''; }
+  function favEl(favicon){
+    if(!favicon) return ICONS.globe;
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = favicon;
+    img.onerror = ()=>{ img.outerHTML = ICONS.globe; };
+    return img;
+  }
+  function putFav(parent, favicon){
+    const f = favEl(favicon);
+    if(typeof f === 'string') parent.insertAdjacentHTML('beforeend', f);
+    else parent.appendChild(f);
+  }
+
+  // Called on every 'state' message: a new URL adds a visit, a later title updates it.
+  function recordVisit(t){
+    if(!t.url || !/^https?:/i.test(t.url)) return;
+    const title = t.title && t.title !== hostOf(t.url) ? t.title : '';
+    if(t.histUrl === t.url){
+      if(title && t.histEntry && t.histEntry.title !== title){ t.histEntry.title = title; saveVisits(); }
+      return;
+    }
+    t.histUrl = t.url;
+    t.histEntry = { url: t.url, title, at: Date.now() };
+    visits.unshift(t.histEntry);
+    if(visits.length > HIST_MAX) visits.length = HIST_MAX;
+    saveVisits();
+  }
+
+  function findBookmark(url){ return url ? bookmarks.find(b=> b.url === url) : null; }
+  function toggleBookmark(){
+    const t = state.active;
+    if(!t || !t.url) return;
+    const b = findBookmark(t.url);
+    if(b){ bookmarks.splice(bookmarks.indexOf(b), 1); showToast('Bookmark removed'); }
+    else{ bookmarks.push({ url: t.url, title: t.title || hostOf(t.url), favicon: smallFav(t.favicon) }); showToast('Bookmarked'); }
+    saveBookmarks();
+    renderBar();
+    updateToolbar();
+  }
+  function onFavicon(t){
+    const b = findBookmark(t.url);
+    if(b && !b.favicon && smallFav(t.favicon)){ b.favicon = t.favicon; saveBookmarks(); renderBar(); }
+  }
+  function updateStar(t){
+    const star = $('pbStar');
+    const on = !!findBookmark(t.url);
+    star.disabled = !t.url;
+    star.classList.toggle('on', on);
+    star.title = on ? 'Remove bookmark (Ctrl+D)' : 'Bookmark this tab (Ctrl+D)';
+    $('pbMenuBookmark').disabled = !t.url;
+    $('pbMenuBookmark').firstChild.textContent = on ? 'Remove bookmark ' : 'Bookmark this tab ';
+  }
+
+  function renderBar(){
+    const bar = $('pbBookmarks');
+    bar.innerHTML = '';
+    bar.classList.toggle('active', barOn() && bookmarks.length > 0);
+    $('pbMenuBar').textContent = barOn() ? 'Hide bookmarks bar' : 'Show bookmarks bar';
+    bookmarks.forEach(b=>{
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'pb-bm';
+      el.title = (b.title || b.url) + '\n' + b.url + '\nRight-click to remove';
+      putFav(el, b.favicon);
+      const label = document.createElement('span');
+      label.textContent = b.title || hostOf(b.url);
+      el.appendChild(label);
+      el.addEventListener('click', ()=> navigateActive(b.url));
+      el.addEventListener('mousedown', (e)=>{ if(e.button === 1) e.preventDefault(); });
+      el.addEventListener('auxclick', (e)=>{ if(e.button === 1){ e.preventDefault(); newTab(b.url, { afterActive: true, background: true }); } });
+      el.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        bookmarks.splice(bookmarks.indexOf(b), 1);
+        saveBookmarks(); renderBar(); updateToolbar();
+        showToast('Removed "' + (b.title || hostOf(b.url)) + '"');
+      });
+      bar.appendChild(el);
+    });
+  }
+
+  /* History / Bookmarks page (covers the views of every tab until closed) */
+  const panel = { kind: '' };
+  function openPanel(kind){
+    closeMenu();
+    panel.kind = kind;
+    $('pbPanelSearch').value = '';
+    $('pbPanel').classList.add('active');
+    renderPanel();
+    setTimeout(()=> $('pbPanelSearch').focus(), 0);
+  }
+  function closePanel(){
+    if(!panel.kind) return;
+    panel.kind = '';
+    $('pbPanel').classList.remove('active');
+  }
+  function dayLabel(at){
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    if(at >= today) return 'Today';
+    if(at >= today - 86400000) return 'Yesterday';
+    return new Date(at).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+  function renderPanel(){
+    const list = $('pbPanelList');
+    const isHist = panel.kind === 'history';
+    const all = isHist ? visits : bookmarks;
+    $('pbPanelTitle').textContent = isHist ? 'History' : 'Bookmarks';
+    $('pbPanelClear').textContent = isHist ? 'Clear history' : 'Remove all';
+    $('pbPanelClear').disabled = !all.length;
+    list.innerHTML = '';
+    const q = $('pbPanelSearch').value.trim().toLowerCase();
+    const items = all.filter(x=> !q || (x.title || '').toLowerCase().includes(q) || x.url.toLowerCase().includes(q));
+    if(!items.length){
+      const empty = document.createElement('div');
+      empty.className = 'pb-panel-empty';
+      empty.textContent = q ? 'No results' : isHist ? 'Pages you visit in the Proxy tab show up here.' : 'Bookmark a page with the star in the address bar.';
+      list.appendChild(empty);
+      return;
+    }
+    let day = '';
+    items.slice(0, 500).forEach(x=>{
+      if(isHist && dayLabel(x.at) !== day){
+        day = dayLabel(x.at);
+        const h = document.createElement('div');
+        h.className = 'pb-panel-day';
+        h.textContent = day;
+        list.appendChild(h);
+      }
+      const row = document.createElement('div');
+      row.className = 'pb-row';
+      row.title = x.url;
+      if(isHist){
+        const time = document.createElement('span');
+        time.className = 'pb-row-time';
+        time.textContent = new Date(x.at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        row.appendChild(time);
+      }
+      const fav = document.createElement('span');
+      fav.className = 'pb-fav';
+      putFav(fav, isHist ? (findBookmark(x.url) || {}).favicon : x.favicon);
+      row.appendChild(fav);
+      const text = document.createElement('span');
+      text.className = 'pb-row-text';
+      text.textContent = x.title || x.url;
+      const host = document.createElement('span');
+      host.className = 'pb-row-host';
+      host.textContent = hostOf(x.url);
+      text.appendChild(host);
+      row.appendChild(text);
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'pb-row-del';
+      del.title = isHist ? 'Remove from history' : 'Remove bookmark';
+      del.setAttribute('aria-label', del.title);
+      del.innerHTML = ICONS.close;
+      del.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        all.splice(all.indexOf(x), 1);
+        if(isHist) saveVisits();
+        else{ saveBookmarks(); renderBar(); updateToolbar(); }
+        renderPanel();
+      });
+      row.appendChild(del);
+      row.addEventListener('click', ()=>{ closePanel(); navigateActive(x.url); });
+      row.addEventListener('mousedown', (e)=>{ if(e.button === 1) e.preventDefault(); });
+      row.addEventListener('auxclick', (e)=>{ if(e.button === 1){ e.preventDefault(); newTab(x.url, { afterActive: true, background: true }); } });
+      list.appendChild(row);
+    });
+  }
+  function clearHistory(){
+    if(!visits.length){ showToast('History is already empty'); return; }
+    if(!confirm('Clear all Proxy browsing history?')) return;
+    visits.length = 0;
+    state.tabs.forEach(t=>{ t.histEntry = null; });
+    saveVisits();
+    if(panel.kind === 'history') renderPanel();
+    showToast('History cleared');
+  }
+  $('pbPanelSearch').addEventListener('input', renderPanel);
+  $('pbPanelClose').addEventListener('click', closePanel);
+  $('pbPanelClear').addEventListener('click', ()=>{
+    if(panel.kind === 'history'){ clearHistory(); return; }
+    if(!bookmarks.length || !confirm('Remove all bookmarks?')) return;
+    bookmarks.length = 0;
+    saveBookmarks(); renderBar(); updateToolbar(); renderPanel();
+  });
+  $('pbStar').addEventListener('click', toggleBookmark);
+
+  /* Menu */
+  const menu = $('pbMenu'), menuBtn = $('pbMenuBtn');
+  function closeMenu(){ menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+  menuBtn.addEventListener('click', ()=>{
+    const open = !menu.classList.contains('open');
+    menu.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('mousedown', (e)=>{ if(!e.target.closest('#pbMenu, #pbMenuBtn')) closeMenu(); });
+  // Clicks inside a proxied site don't reach this page, but they do take focus from it.
+  window.addEventListener('blur', closeMenu);
+  menu.addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-act]');
+    if(!b || b.disabled) return;
+    closeMenu();
+    switch(b.dataset.act){
+      case 'newtab': newTab(); break;
+      case 'history': openPanel('history'); break;
+      case 'bookmarks': openPanel('bookmarks'); break;
+      case 'bookmark': toggleBookmark(); break;
+      case 'bar': lsSet(BAR_KEY, barOn() ? '0' : '1'); renderBar(); break;
+      case 'clear': clearHistory(); break;
+    }
+  });
+
+  function updateNtpNote(){
+    $('pbNtpNote').textContent = 'Powered by ' + PROXY_ENGINES[proxyBackend()] + '. Some sites may not load or may be slow.';
+  }
 
   /* ---------- New tab page ---------- */
   function buildTiles(){
@@ -5165,6 +5490,7 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
   function fillSettings(){
     $('proxyBackendSelect').value = window.TacticsProxy.proxyBackend();
     $('proxyTransportSelect').value = window.TacticsProxy.proxyTransport();
+    $('proxyAdblockToggle').checked = window.TacticsProxy.proxyAdblock();
     engineSelect.value = ENGINES[lsGet(LS.engine)] ? lsGet(LS.engine) : 'google';
     wispInput.value = lsGet(LS.wisp) || '';
     hostSelect.value = hostChoice();
@@ -5196,9 +5522,11 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
     lsSet(LS.wisp, wisp);
     lsSet(LS.backend, $('proxyBackendSelect').value);
     lsSet(LS.transport, $('proxyTransportSelect').value);
+    lsSet(LS.adblock, $('proxyAdblockToggle').checked ? '1' : '0');
     lsSet(LS.hostChoice, choice);
     lsSet(LS.host, choice === 'custom' ? host : '');
     reloadAllTabs();
+    updateNtpNote();
     closeSettingsPanel();
     showToast('Proxy settings applied');
   });
@@ -5209,6 +5537,8 @@ movieDetailModal?.addEventListener('transitionend', ()=>{
     if(!state.started){
       state.started = true;
       buildTiles();
+      renderBar();
+      updateNtpNote();
       applyEnginePlaceholder();
       fillSettings();
       if(!restore()) newTab();

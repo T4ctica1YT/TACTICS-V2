@@ -1,0 +1,15 @@
+{
+  "name": "tactics-adblock",
+  "private": true,
+  "description": "Builds ../Proxy/adblock.js: uBlock Origin's static network filtering engine as one classic script for the proxy service worker.",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "build": "esbuild entry.js --bundle --format=iife --minify --legal-comments=inline --target=es2020 --outfile=../Proxy/adblock.js"
+  },
+  "dependencies": {
+    "@gorhill/ubo-core": "0.1.30"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
+  }
+}

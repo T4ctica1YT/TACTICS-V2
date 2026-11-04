@@ -9,12 +9,42 @@
  */
 const params = new URL(self.location.href).searchParams;
 const wisp = params.get('wisp') || 'wss://wisp.mercurywork.shop/';
-const useLibcurl = params.get('transport') === 'libcurl';
+const useLibcurl = params.get('transport') !== 'epoxy';
+const LIBCURL_JS = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/libcurl-transport@1.5.2/dist/index.js';
 
 importScripts('https://cdn.jsdelivr.net/npm/@mercuryworkshop/bare-mux@2.1.9/dist/worker.js');
-importScripts(useLibcurl
-  ? 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/libcurl-transport@1.5.2/dist/index.js'
-  : 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.js');
+importScripts(useLibcurl ? LIBCURL_JS : 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-transport@2.1.28/dist/index.js');
+
+// Epoxy's HTTP/2 code refuses responses whose headers add up to more than ~16 KB (YouTube sends ~19 KB,
+// and sites only add headers over time): "hyper::Error(Http2, ... PROTOCOL_ERROR, Library)".
+// Those requests are retried with libcurl (loaded the first time it's needed), and that host keeps
+// using it. frame.html does the same for Scramjet 2 and T4CTIC$.
+if(!useLibcurl){
+  const EPOXY_HTTP_ERROR = /hyper|http2|protocol_error/i;
+  const Epoxy = self.EpxMod.default || self.EpxMod;
+  let curl = null;
+  const curlHosts = new Set();
+  const getCurl = ()=> curl || (curl = (async ()=>{
+    importScripts(LIBCURL_JS);
+    const Curl = self.CurlMod.default || self.CurlMod;
+    const c = new Curl({ wisp });
+    await c.init();
+    return c;
+  })().catch((e)=>{ curl = null; throw e; }));
+  self.TacticsEpoxy = class extends Epoxy {
+    async request(remote, method, body, headers, signal){
+      if(curlHosts.has(remote.host)) return (await getCurl()).request(remote, method, body, headers, signal);
+      try{
+        return await super.request(remote, method, body, headers, signal);
+      }catch(e){
+        // A streamed upload can't be sent twice.
+        if(!EPOXY_HTTP_ERROR.test(String((e && e.message) || e)) || body instanceof ReadableStream || (signal && signal.aborted)) throw e;
+        curlHosts.add(remote.host);
+        return (await getCurl()).request(remote, method, body, headers, signal);
+      }
+    }
+  };
+}
 
 (function(){
   const conn = new MessageChannel();
@@ -32,7 +62,7 @@ importScripts(useLibcurl
       client: {
         function: useLibcurl
           ? 'const m = self.CurlMod; return [m.default || m, "tactics-libcurl"];'
-          : 'const m = self.EpxMod; return [m.default || m, "tactics-epoxy"];',
+          : 'return [self.TacticsEpoxy, "tactics-epoxy"];',
         args: [{ wisp }]
       }
     },

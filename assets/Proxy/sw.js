@@ -6,7 +6,8 @@
  *
  * It serves all four proxy engines frame.html can use, each under its own prefix:
  *   scramjet/  Scramjet 1.1      service/  Ultraviolet
- *   uv/        Interstellar      ~/sj/     Scramjet 2 (via scramjet-controller)
+ *   uv/        Interstellar      ~/sj/     Scramjet 2 and T4CTIC$ (via scramjet-controller)
+ * and blocks ads for all of them with uBlock Origin's filtering engine (adblock.js).
  */
 const NPM = 'https://cdn.jsdelivr.net/npm/';
 const SJ_CDN = NPM + '@mercuryworkshop/scramjet@1.1.0/dist/';
@@ -15,6 +16,10 @@ importScripts(SJ_CDN + 'scramjet.all.js');
 importScripts(UV_CDN + 'uv.bundle.js');
 importScripts(UV_CDN + 'uv.sw.js');
 importScripts(NPM + '@mercuryworkshop/scramjet-controller@0.0.14/dist/controller.sw.js');
+// uBlock Origin's network filtering engine (built from assets/AdBlock). Hosts that don't have the
+// file yet get the copy in the GitHub repo through jsDelivr.
+try{ importScripts('adblock.js'); }
+catch(e){ importScripts('https://cdn.jsdelivr.net/gh/T4ctica1YT/TACTICS-V2@main/assets/Proxy/adblock.js'); }
 
 const BASE = new URL('./', self.location.href).pathname;
 
@@ -67,11 +72,104 @@ function jsResponse(body){
   return new Response(body, { headers: { 'content-type': 'application/javascript; charset=utf-8' } });
 }
 
+/* ---------- Ad blocker ----------
+   Every proxied request (any engine) passes through here, so it is checked against uBlock Origin's
+   default filter lists, the same way uBO checks a browser's requests. Blocked requests fail like a
+   blocked request in uBO. frame.html tells this worker whether it's on (Settings -> Proxy -> Ad Block). */
+const ADBLOCK_CDN = 'https://cdn.jsdelivr.net/gh/uBlockOrigin/uAssetsCDN@main/';
+const ADBLOCK_LISTS = ['filters/filters.min.txt', 'filters/badware.min.txt', 'filters/privacy.min.txt',
+                       'filters/quick-fixes.min.txt', 'filters/unbreak.min.txt',
+                       'thirdparties/easylist.txt', 'thirdparties/easyprivacy.txt'];
+const ADBLOCK_CACHE = 'tactics-adblock-v1';
+const ADBLOCK_SELFIE = BASE + '__adblock/engine';
+const ADBLOCK_STATE = BASE + '__adblock/on';
+// Filter lists are downloaded again after this long (uBO updates its lists every few days too).
+const ADBLOCK_MAX_AGE = 4 * 24 * 60 * 60 * 1000;
+// How long a request waits for the engine when the worker has just started.
+const ADBLOCK_WAIT_MS = 2000;
+let adblockOn = true;
+let adblockEngine = null;    // Promise, set while/once the engine is loaded
+
+async function compileAdblock(cache){
+  const lists = await Promise.all(ADBLOCK_LISTS.map(name => nativeFetch(ADBLOCK_CDN + name)
+    .then(r => r.ok ? r.text() : '').catch(()=> '').then(raw => ({ name, raw }))));
+  if(!lists.some(l => l.raw)) throw new Error('could not download the filter lists');
+  TacticsAdblock.compile(lists);
+  await cache.put(ADBLOCK_SELFIE, new Response(TacticsAdblock.serialize(), { headers: { 'x-saved': String(Date.now()) } }));
+}
+function loadAdblock(){
+  if(adblockEngine) return adblockEngine;
+  adblockEngine = (async ()=>{
+    const cache = await caches.open(ADBLOCK_CACHE);
+    const saved = await cache.match(ADBLOCK_SELFIE);
+    if(saved){
+      try{
+        TacticsAdblock.deserialize(await saved.text());
+        if(Date.now() - Number(saved.headers.get('x-saved') || 0) > ADBLOCK_MAX_AGE) compileAdblock(cache).catch(()=>{});
+        return true;
+      }catch(e){}
+    }
+    await compileAdblock(cache);
+    return true;
+  })().catch((e)=>{ adblockEngine = null; console.warn('TACTICS ad block:', e); return false; });
+  return adblockEngine;
+}
+const adblockStateLoaded = caches.open(ADBLOCK_CACHE).then(c => c.match(ADBLOCK_STATE)).then(r => r ? r.text() : '1')
+  .then(v => { adblockOn = v !== '0'; if(adblockOn) loadAdblock(); }).catch(()=>{});
+
+self.addEventListener('message', (e)=>{
+  if(!e.data || typeof e.data.tacticsAdblock !== 'boolean') return;
+  adblockOn = e.data.tacticsAdblock;
+  if(adblockOn) loadAdblock();
+  e.waitUntil(caches.open(ADBLOCK_CACHE).then(c => c.put(ADBLOCK_STATE, new Response(adblockOn ? '1' : '0'))).catch(()=>{}));
+});
+
+const SJ2_PREFIX = BASE + '~/sj/';
+// A proxied URL on this host -> the real URL it stands for ('' if it isn't one).
+function realUrl(href){
+  try{
+    const u = new URL(href);
+    if(u.origin !== self.location.origin) return '';
+    const rest = u.href.slice(u.origin.length);
+    if(u.pathname.startsWith(uvCfg.prefix)) return Ultraviolet.codec.xor.decode(rest.slice(uvCfg.prefix.length));
+    if(u.pathname.startsWith(isCfg.prefix)) return Ultraviolet.codec.xor.decode(rest.slice(isCfg.prefix.length));
+    if(u.pathname.startsWith(SJ2_PREFIX)){
+      // ~/sj/<controller id>/<frame id>/<encoded url>
+      return decodeURIComponent(rest.slice(SJ2_PREFIX.length).split('/').slice(2).join('/').split('?')[0]);
+    }
+    if(u.pathname.startsWith(BASE + 'scramjet/')) return decodeURIComponent(rest.slice((BASE + 'scramjet/').length).split('?')[0]);
+  }catch(e){}
+  return '';
+}
+// request.destination -> uBO's request types.
+const ADBLOCK_TYPES = { '': 'xmlhttprequest', script: 'script', worker: 'script', sharedworker: 'script', style: 'stylesheet',
+                        image: 'image', font: 'font', audio: 'media', video: 'media', track: 'media', iframe: 'sub_frame',
+                        frame: 'sub_frame', object: 'object', embed: 'object', manifest: 'other', report: 'other' };
+
+async function adblocked(event, target){
+  if(!target || !/^https?:/i.test(target)) return false;
+  await adblockStateLoaded;
+  if(!adblockOn) return false;
+  const type = ADBLOCK_TYPES[event.request.destination];
+  if(!type) return false;
+  // The page shown in a tab is the frame inside frame.html: its referrer isn't a proxied URL.
+  // Only things a proxied page loads are filtered, never the page the user opened.
+  let origin = realUrl(event.request.referrer);
+  if(!origin && event.clientId){
+    try{ const c = await self.clients.get(event.clientId); if(c) origin = realUrl(c.url); }catch(e){}
+  }
+  if(!origin) return false;
+  const ready = await Promise.race([loadAdblock(), new Promise(r => setTimeout(()=> r(false), ADBLOCK_WAIT_MS))]);
+  if(!ready) return false;
+  try{ return TacticsAdblock.match({ originURL: origin, url: target, type }) === 1; }catch(e){ return false; }
+}
+
 self.addEventListener('install', ()=> self.skipWaiting());
 self.addEventListener('activate', (e)=> e.waitUntil(self.clients.claim()));
 
 async function handleRequest(event){
   const url = new URL(event.request.url);
+  if(url.origin === self.location.origin && await adblocked(event, realUrl(url.href))) return Response.error();
   if(url.origin === self.location.origin){
     if(url.pathname === uvCfg.config) return jsResponse(uvConfigScript(uvCfg));
     if(url.pathname === isCfg.config) return jsResponse(uvConfigScript(isCfg));

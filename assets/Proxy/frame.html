@@ -36,30 +36,41 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
      sj2 = Scramjet 2            (scramjet-controller, its own Epoxy 3 / libcurl 2 transport, prefix ~/sj/)
      uv  = Ultraviolet 3.2       (bare-mux + Epoxy/libcurl, prefix service/)
      is  = Interstellar's setup  (Ultraviolet with Interstellar's config, prefix uv/)
-     sw.js (same folder) handles all four prefixes. */
+     t4  = T4CTIC$               (Scramjet 2 + scramjet-utils plugins from assets/Proxy/T4ctic$, prefix ~/sj/)
+     sw.js (same folder) handles all of these prefixes. */
   const NPM = 'https://cdn.jsdelivr.net/npm/';
   const SJ_CDN = NPM + '@mercuryworkshop/scramjet@1.1.0/dist/';
   const SJ2_CDN = NPM + '@mercuryworkshop/scramjet@2.0.67-alpha.2/dist/';
   const SJ2_CONTROLLER_CDN = NPM + '@mercuryworkshop/scramjet-controller@0.0.14/dist/';
+  const SJ_UTILS_JS = NPM + '@mercuryworkshop/scramjet-utils@0.0.3/dist/scramjet-utils.js';
   const BAREMUX_JS = NPM + '@mercuryworkshop/bare-mux@2.1.9/dist/index.js';
   // Transports: bare-mux engines use Epoxy 2 / libcurl 1, Scramjet 2 uses Epoxy 3 / libcurl 2.
   const TRANSPORTS = {
     epoxy:   { baremux: NPM + '@mercuryworkshop/epoxy-transport@2.1.28/dist/index.mjs',
-               sj2: NPM + '@mercuryworkshop/epoxy-transport@3.0.1/dist/index.js', sj2Global: 'EpoxyTransport', sj2Class: 'default' },
+               sj2: NPM + '@mercuryworkshop/epoxy-transport@3.0.2/dist/index.js', sj2Global: 'EpoxyTransport', sj2Class: 'default' },
     libcurl: { baremux: NPM + '@mercuryworkshop/libcurl-transport@1.5.2/dist/index.mjs',
-               sj2: NPM + '@mercuryworkshop/libcurl-transport@2.0.5/dist/index.js', sj2Global: 'LibcurlTransport', sj2Class: 'default' }
+               sj2: NPM + '@mercuryworkshop/libcurl-transport@2.0.6/dist/index.js', sj2Global: 'LibcurlTransport', sj2Class: 'default' }
   };
-  // Wisp server used when none is set in the site's settings. The relay on this host
-  // (assets/ProxyWorker, wss://<this host>/wisp/) is tried first: it forwards to the public server
-  // through the proxy host, which helps on networks that block the public server directly.
+  // Epoxy's HTTP/2 code refuses responses whose headers add up to more than ~16 KB (YouTube sends ~19 KB,
+  // and sites only add headers over time). It fails with "hyper::Error(Http2, ... PROTOCOL_ERROR, Library)".
+  // Such requests are retried with libcurl, which allows far bigger headers, and that host keeps using it.
+  const EPOXY_HTTP_ERROR = /hyper|http2|protocol_error/i;
+  // Wisp server used when none is set in the site's settings. The Wisp server on this host
+  // (assets/ProxyWorker, wss://<this host>/wisp/) is tried first: sites see Cloudflare's IP rather than
+  // the public server's (YouTube won't play videos for that one), and it works on networks that
+  // block the public server.
   const PUBLIC_WISP = 'wss://wisp.mercurywork.shop/';
   const WISP_CACHE_KEY = 'tactics_wisp_ok';
   const WISP_CACHE_MS = 10 * 60 * 1000;
   const BASE = new URL('./', location.href);
   const params = new URLSearchParams(location.search);
-  const engine = ['sj', 'sj2', 'uv', 'is'].includes(params.get('engine')) ? params.get('engine') : 'sj2';
-  const transport = params.get('transport') === 'libcurl' ? 'libcurl' : 'epoxy';
+  const engine = ['t4', 'sj', 'sj2', 'uv', 'is'].includes(params.get('engine')) ? params.get('engine') : 't4';
+  // T4CTIC$ and Scramjet 2 share the controller; "isController" covers both.
+  const isController = engine === 't4' || engine === 'sj2';
+  const transport = params.get('transport') === 'epoxy' ? 'epoxy' : 'libcurl';
   const askedWisp = (params.get('wisp') || '').trim();
+  // Ad blocker in sw.js (Settings -> Proxy -> Ad Block); on unless the site passes adblock=0.
+  const adblock = params.get('adblock') !== '0';
   let wisp = '';
   // mode: '' = browser tab, 'player' = movie source (video controls, popups blocked),
   //       'fetch' = hidden frame that only fetches URLs for the site (no page shown).
@@ -203,7 +214,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
   // Load a real URL in the proxied view with the selected engine.
   function goTo(url){
     if(engine === 'sj') sjFrame.go(url);
-    else if(engine === 'sj2') sj2Frame.go(url);
+    else if(isController) sj2Frame.go(url);
     else view.src = (engine === 'uv' ? UV_PREFIX() : IS_PREFIX()) + uvXor.encode(url);
   }
 
@@ -247,7 +258,9 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     let target = '';
     try{
       if(raw && /^data:/i.test(raw)){ post({ event: 'favicon', url: pageUrl, favicon: raw }); return; }
-      target = raw ? (toReal(raw) || new URL(raw, pageUrl).href) : new URL('/favicon.ico', pageUrl).href;
+      // A relative href belongs to the proxied page, not to this host.
+      const absolute = /^[a-z][a-z0-9+.-]*:/i.test(raw);
+      target = !raw ? new URL('/favicon.ico', pageUrl).href : absolute ? (toReal(raw) || raw) : new URL(raw, pageUrl).href;
     }catch(e){ return; }
     try{
       const res = await win.fetch(target);
@@ -450,6 +463,76 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     });
   }
 
+  // Wraps an Epoxy transport so requests it can't handle (EPOXY_HTTP_ERROR) are sent with libcurl
+  // instead. makeCurl() loads libcurl the first time it's needed. (baremux-worker.js does the same.)
+  function withLibcurlFallback(epoxy, makeCurl){
+    let curl = null;
+    const curlHosts = new Set();
+    const getCurl = ()=> curl || (curl = makeCurl().catch((e)=>{ curl = null; throw e; }));
+    const request = epoxy.request.bind(epoxy);
+    epoxy.request = async (remote, method, body, headers, signal)=>{
+      if(curlHosts.has(remote.host)) return (await getCurl()).request(remote, method, body, headers, signal);
+      try{
+        return await request(remote, method, body, headers, signal);
+      }catch(e){
+        // A streamed upload can't be sent twice.
+        if(!EPOXY_HTTP_ERROR.test(String((e && e.message) || e)) || body instanceof ReadableStream || (signal && signal.aborted)) throw e;
+        curlHosts.add(remote.host);
+        return (await getCurl()).request(remote, method, body, headers, signal);
+      }
+    };
+    return epoxy;
+  }
+
+  /* ---------- T4CTIC$ plugins (from assets/Proxy/T4ctic$/src/engine.js) ---------- */
+  function errorPage(error){
+    const message = String((error && error.message) || error || 'Unknown error').replace(/[<&]/g, c => c === '<' ? '&lt;' : '&amp;');
+    return '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page unavailable</title>' +
+      '<style>html{color-scheme:light dark;font:16px/1.5 system-ui,sans-serif}body{margin:0;min-height:100vh;display:grid;place-items:center}' +
+      'main{width:min(32rem,calc(100% - 3rem))}h1{font-size:1.25rem;margin:0 0 .5rem}p{margin:0 0 .75rem;color:GrayText}code{font-size:.875rem}</style>' +
+      '<main><h1>This page could not be loaded</h1><p>The proxy reached the network but the request failed.</p><p><code>' + message + '</code></p></main>';
+  }
+  function t4Plugins(){
+    const u = window.$scramjetUtils;
+    // Failed page loads show an error page instead of a blank frame.
+    class ErrorPagePlugin extends u.ManagedPlugin {
+      constructor(){ super('error-page', []); }
+      install(frame){
+        this.tap(frame.hooks.error.request, (ctx, out)=>{
+          if(ctx.error && ctx.error.name === 'AbortError') return;
+          if(!['document', 'iframe', 'frame'].includes((ctx.rawrequest && ctx.rawrequest.destination) || '')) return;
+          out.suppressError = true;
+          out.setResponse = { body: errorPage(ctx.error), headers: [['content-type', 'text/html; charset=utf-8']], status: 502, statusText: 'Bad Gateway' };
+        });
+      }
+    }
+    // pushState/replaceState without a URL keep the page's real URL.
+    class HistoryUrlPlugin extends u.ManagedPlugin {
+      constructor(){ super('history-url', []); }
+      install(frame){
+        this.tap(frame.hooks.init.post, (context)=>{
+          if(!context.isTopLevel) return;
+          const proto = context.window.History.prototype;
+          for(const method of ['pushState', 'replaceState']){
+            const original = proto[method];
+            proto[method] = function(data, unused, url){ return original.call(this, data, unused, url == null ? context.client.url.href : url); };
+          }
+        });
+      }
+    }
+    return [
+      new u.HttpCachePlugin(),
+      new HistoryUrlPlugin(),
+      new u.UrlWatcherPlugin(()=> report()),
+      // Links that would escape the proxy open as a new browser tab instead.
+      new u.CatchEscapedLinksPlugin((url)=>{
+        post({ event: 'newtab', url: url.href });
+        return new URL('data:text/html,' + encodeURIComponent(errorPage(new Error('Opened in a new tab.'))));
+      }),
+      new ErrorPagePlugin()
+    ];
+  }
+
   async function boot(){
     if(mode === 'fetch'){
       // Only needs bare-mux (no service worker or proxy engine): requests go straight over Wisp.
@@ -474,21 +557,32 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
     }
 
     if(!(await registerServiceWorker())) return false;
+    navigator.serviceWorker.controller.postMessage({ tacticsAdblock: adblock });
     wisp = await pickWisp();
 
-    if(engine === 'sj2'){
+    if(isController){
       // Scramjet 2 runs the transport in this page; sw.js forwards requests here.
       const t = TRANSPORTS[transport];
       await loadScript(SJ2_CDN + 'scramjet.js');
       await loadScript(SJ2_CONTROLLER_CDN + 'controller.api.js');
       await loadScript(t.sj2);
+      if(engine === 't4') await loadScript(SJ_UTILS_JS);
       const { Controller, config } = window.$scramjetController;
       config.prefix = SJ2_PREFIX();
       config.scramjetPath = SJ2_CDN + 'scramjet.js';
       config.wasmPath = SJ2_CDN + 'scramjet.wasm';
       config.injectPath = SJ2_CONTROLLER_CDN + 'controller.inject.js';
       const Transport = window[t.sj2Global][t.sj2Class];
-      const controller = new Controller({ serviceworker: navigator.serviceWorker.controller, transport: new Transport({ wisp }) });
+      let tr = new Transport({ wisp });
+      if(transport === 'epoxy'){
+        tr = withLibcurlFallback(tr, async ()=>{
+          await loadScript(TRANSPORTS.libcurl.sj2);
+          const curl = new window[TRANSPORTS.libcurl.sj2Global][TRANSPORTS.libcurl.sj2Class]({ wisp });
+          await curl.init();
+          return curl;
+        });
+      }
+      const controller = new Controller({ serviceworker: navigator.serviceWorker.controller, transport: tr });
       await controller.wait();
       // scramjet-controller 0.0.14 can deadlock when a response sets cookies: the response waits for a
       // cookie broadcast through the service worker, which is still waiting on that same response.
@@ -496,7 +590,13 @@ iframe{border:0;width:100%;height:100%;display:block;background:#fff}
       const syncCookies = controller.propagateCookieSync.bind(controller);
       controller.propagateCookieSync = (...args)=>{ syncCookies(...args).catch(()=>{}); return Promise.resolve(); };
       makeView();
-      sj2Frame = controller.createFrame(view);
+      if(engine === 't4'){
+        sj2Frame = controller.createFrame(view, { plugins: t4Plugins() });
+        // The browser can stop an idle service worker while a page still needs it.
+        setInterval(()=>{ try{ navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage('keepalive'); }catch(e){} }, 15000);
+      } else {
+        sj2Frame = controller.createFrame(view);
+      }
       return true;
     }
 

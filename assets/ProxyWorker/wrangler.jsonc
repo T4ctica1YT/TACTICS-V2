@@ -6,11 +6,16 @@
   "assets": {
     "directory": "../Proxy",
     "binding": "ASSETS",
-    // Only send /wisp to the worker; everything else is served straight from ../Proxy.
-    "run_worker_first": ["/wisp", "/wisp/"]
+    // Only send the Wisp paths to the worker; everything else is served straight from ../Proxy.
+    "run_worker_first": ["/wisp", "/wisp/", "/wisp-relay", "/wisp-relay/"]
   },
+  // One Durable Object per Wisp connection (see index.js). SQLite-backed classes work on the free plan.
+  "durable_objects": {
+    "bindings": [{ "name": "WISP", "class_name": "WispServer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WispServer"] }],
   "vars": {
-    // Public Wisp server the /wisp/ relay forwards to.
+    // Public Wisp server for streams the Worker cannot open itself (and for /wisp-relay/).
     "WISP_UPSTREAM": "wss://wisp.mercurywork.shop/"
   }
 }

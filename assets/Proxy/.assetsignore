@@ -1,0 +1,3 @@
+# Files in this folder that the "prox" Cloudflare worker should not serve.
+# T4ctic$ is the standalone source of the T4CTIC$ engine; frame.html loads its runtime from jsDelivr.
+T4ctic$/
