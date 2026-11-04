@@ -1,0 +1,14 @@
+{
+  {
+    title: 'Eden Emulator',
+    cover: 'eden.png',
+    type: "html",
+    link: 'eden.html'
+  },
+  {
+    title: 'YouTube',
+    cover: 'YT.png',
+    type: "proxy",
+    link: "https://www.youtube.com/"
+  }
+}

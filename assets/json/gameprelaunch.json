@@ -2430,5 +2430,23 @@
     cover: 'captcha.png',
     description: "game where you complete captchas in quick succession",
     features: "Singleplayer,"
+  },
+  'smo.html': {
+    title: 'Super Mario Odyssey',
+    year: '2017',
+    system: 'PC',
+    genre: 'Platformer',
+    cover: 'smo.png',
+    description: "Super Mario Odyssey is a 2017 platform game developed and published by Nintendo for the Nintendo Switch. An installment in the Super Mario series.",
+    features: "Singleplayer, Multiplayer, Capturing System"
+  },
+  'smm2.html': {
+    title: 'Super Mario Maker 2',
+    year: '2019',
+    system: 'PC',
+    genre: 'Platformer',
+    cover: 'smo.png',
+    description: "Super Mario Maker 2 is a 2019 platform game and game creation system developed and published by Nintendo for the Nintendo Switch. It is the sequel to Super Mario Maker.",
+    features: "Singleplayer, Multiplayer, Creation, Online Course Sharing"
   }
 }
